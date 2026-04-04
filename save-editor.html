@@ -1,0 +1,2247 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>龍胤立志傳 存档编辑器</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Microsoft YaHei', 'SimHei', sans-serif; background: #1a1a2e; color: #e0e0e0; min-height: 100vh; }
+
+/* Top bar */
+.topbar { background: #16213e; padding: 10px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 2px solid #e94560; }
+.topbar h1 { font-size: 20px; color: #e94560; white-space: nowrap; }
+.topbar .save-info { color: #aaa; font-size: 13px; flex: 1; }
+.topbar button { padding: 6px 18px; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; font-family: inherit; }
+.btn-load { background: #0f3460; color: #fff; }
+.btn-save { background: #e94560; color: #fff; }
+.btn-load:hover { background: #1a4a8a; }
+.btn-save:hover { background: #ff6b81; }
+
+/* Tabs */
+.tabs { display: flex; background: #16213e; border-bottom: 1px solid #333; }
+.tab { padding: 10px 24px; cursor: pointer; color: #888; font-size: 14px; border-bottom: 3px solid transparent; transition: all .2s; }
+.tab:hover { color: #ccc; }
+.tab.active { color: #e94560; border-bottom-color: #e94560; }
+
+/* Layout */
+.main { display: flex; height: calc(100vh - 90px); }
+.sidebar { width: 260px; min-width: 260px; background: #16213e; border-right: 1px solid #333; overflow-y: auto; }
+.content { flex: 1; overflow-y: auto; padding: 16px; }
+
+/* Sidebar list */
+.sidebar-header { padding: 10px 14px; font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #222; }
+.sidebar-item { padding: 10px 14px; cursor: pointer; border-bottom: 1px solid #1a1a2e; display: flex; align-items: center; gap: 10px; transition: background .15s; }
+.sidebar-item:hover { background: #1a2744; }
+.sidebar-item.active { background: #0f3460; border-left: 3px solid #e94560; }
+.sidebar-item .name { flex: 1; font-size: 14px; }
+.sidebar-item .sub { font-size: 11px; color: #666; }
+.sidebar-search { padding: 8px; border-bottom: 1px solid #222; }
+.sidebar-search input { width: 100%; padding: 6px 10px; background: #1a1a2e; border: 1px solid #333; border-radius: 4px; color: #e0e0e0; font-size: 13px; outline: none; }
+.sidebar-search input:focus { border-color: #e94560; }
+
+/* Tags */
+.tag { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; margin-left: 4px; }
+.tag-leader { background: #e94560; color: #fff; }
+.tag-dead { background: #555; color: #999; }
+.tag-female { background: #9b59b6; color: #fff; }
+.tag-male { background: #2980b9; color: #fff; }
+.tag-force { background: #27ae60; color: #fff; }
+.tag-city { background: #e67e22; color: #fff; }
+.tag-village { background: #27ae60; color: #fff; }
+.tag-sect { background: #8e44ad; color: #fff; }
+.tag-temp { background: #f39c12; color: #333; }
+
+/* Cards */
+.card { background: #16213e; border-radius: 8px; padding: 16px; margin-bottom: 12px; border: 1px solid #222; }
+.card-title { font-size: 16px; color: #e94560; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #333; }
+.field-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.field { display: flex; flex-direction: column; gap: 2px; }
+.field label { font-size: 11px; color: #888; }
+.field input, .field select { padding: 5px 8px; background: #1a1a2e; border: 1px solid #333; border-radius: 4px; color: #e0e0e0; font-size: 13px; outline: none; }
+.field input:focus, .field select:focus { border-color: #e94560; }
+.field input[type="number"] { width: 100%; }
+.field input[readonly] { color: #666; }
+
+/* Stat bars */
+.stat-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.stat-label { width: 60px; font-size: 12px; color: #aaa; text-align: right; }
+.stat-bar-bg { flex: 1; height: 18px; background: #1a1a2e; border-radius: 3px; overflow: hidden; position: relative; }
+.stat-bar { height: 100%; border-radius: 3px; transition: width .3s; }
+.stat-bar-text { position: absolute; right: 6px; top: 0; line-height: 18px; font-size: 11px; color: #fff; }
+.stat-bar.str { background: #e74c3c; }
+.stat-bar.agi { background: #2ecc71; }
+.stat-bar.int { background: #3498db; }
+.stat-bar.con { background: #e67e22; }
+.stat-bar.per { background: #9b59b6; }
+.stat-bar.cha { background: #1abc9c; }
+
+/* Sub-tabs inside content */
+.sub-tabs { display: flex; gap: 4px; margin-bottom: 12px; flex-wrap: wrap; }
+.sub-tab { padding: 5px 14px; background: #1a1a2e; border: 1px solid #333; border-radius: 4px; cursor: pointer; font-size: 12px; color: #aaa; transition: all .15s; }
+.sub-tab:hover { border-color: #e94560; color: #e0e0e0; }
+.sub-tab.active { background: #e94560; color: #fff; border-color: #e94560; }
+
+/* Item table */
+.item-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.item-table th { text-align: left; padding: 6px 8px; background: #1a1a2e; color: #888; font-weight: normal; border-bottom: 1px solid #333; }
+.item-table td { padding: 6px 8px; border-bottom: 1px solid #222; }
+.item-table tr:hover { background: #1a2744; }
+.item-table input { width: 70px; padding: 3px 6px; background: #1a1a2e; border: 1px solid #333; border-radius: 3px; color: #e0e0e0; font-size: 12px; }
+.rarity-0 { color: #aaa; } .rarity-1 { color: #2ecc71; } .rarity-2 { color: #3498db; }
+.rarity-3 { color: #9b59b6; } .rarity-4 { color: #e67e22; } .rarity-5 { color: #e74c3c; }
+
+/* Skill list */
+.skill-item { display: flex; align-items: center; gap: 10px; padding: 8px; border-bottom: 1px solid #222; }
+.skill-item:hover { background: #1a2744; }
+.skill-name { flex: 1; font-size: 13px; }
+.skill-lv { font-size: 12px; color: #e94560; }
+.skill-lv input { width: 40px; }
+.skill-equipped { font-size: 11px; padding: 2px 6px; border-radius: 3px; }
+.skill-equipped.yes { background: #27ae60; color: #fff; }
+.skill-equipped.no { background: #333; color: #666; }
+
+/* World area */
+.area-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+
+/* Empty state */
+.empty { text-align: center; padding: 60px 20px; color: #555; }
+.empty .icon { font-size: 48px; margin-bottom: 16px; }
+.empty p { font-size: 14px; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #1a1a2e; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #555; }
+
+/* Toast */
+.toast { position: fixed; bottom: 20px; right: 20px; padding: 10px 20px; background: #27ae60; color: #fff; border-radius: 6px; font-size: 14px; z-index: 999; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.toast.error { background: #e74c3c; }
+
+/* Hero tags (天赋) */
+.tag-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #222; transition: background .15s; }
+.tag-item:hover { background: #1a2744; }
+.tag-badge { padding: 3px 10px; border-radius: 12px; font-size: 13px; font-weight: bold; white-space: nowrap; }
+.tag-id { font-size: 11px; color: #666; min-width: 50px; }
+.tag-time { font-size: 12px; color: #aaa; }
+.tag-source { font-size: 12px; color: #888; }
+.tag-remove { background: #e74c3c; color: #fff; border: none; border-radius: 4px; padding: 3px 10px; cursor: pointer; font-size: 12px; }
+.tag-remove:hover { background: #c0392b; }
+.tag-add-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 0; }
+.tag-add-row select, .tag-add-row input { padding: 5px 8px; background: #1a1a2e; border: 1px solid #333; border-radius: 4px; color: #e0e0e0; font-size: 13px; outline: none; }
+.tag-add-row select:focus, .tag-add-row input:focus { border-color: #e94560; }
+.tag-add-row select { max-width: 260px; }
+.tag-add-btn { background: #27ae60; color: #fff; border: none; border-radius: 4px; padding: 5px 16px; cursor: pointer; font-size: 13px; }
+.tag-add-btn:hover { background: #2ecc71; }
+
+/* Item editor */
+.item-row { border-bottom: 1px solid #222; }
+.item-row:hover { background: #1a2744; }
+.item-summary { display: flex; align-items: center; gap: 8px; padding: 8px; cursor: pointer; }
+.item-summary .item-name { flex: 1; }
+.item-edit-btn { background: #0f3460; color: #fff; border: none; border-radius: 4px; padding: 3px 10px; cursor: pointer; font-size: 12px; }
+.item-edit-btn:hover { background: #1a4a8a; }
+.item-detail { background: #111a30; padding: 12px; border-top: 1px solid #333; display: none; }
+.item-detail.open { display: block; }
+.stat-entry { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.stat-entry select { padding: 3px 6px; background: #1a1a2e; border: 1px solid #333; border-radius: 3px; color: #e0e0e0; font-size: 12px; max-width: 180px; }
+.stat-entry input { width: 80px; padding: 3px 6px; background: #1a1a2e; border: 1px solid #333; border-radius: 3px; color: #e0e0e0; font-size: 12px; }
+.stat-entry .stat-remove { background: #e74c3c; color: #fff; border: none; border-radius: 3px; padding: 2px 8px; cursor: pointer; font-size: 11px; }
+.stat-entry .stat-remove:hover { background: #c0392b; }
+.stat-add-btn { background: #27ae60; color: #fff; border: none; border-radius: 4px; padding: 3px 12px; cursor: pointer; font-size: 12px; margin-top: 4px; }
+.stat-add-btn:hover { background: #2ecc71; }
+.stat-section-title { font-size: 12px; color: #e94560; margin: 8px 0 4px; }
+.stat-section-title:first-child { margin-top: 0; }
+.base-stat { color: #e0e0e0; }
+.extra-stat { color: #2ecc71; }
+
+/* Sect Grid Map */
+.sect-map-wrap { display: flex; gap: 16px; flex-wrap: wrap; }
+.sect-map-grid-wrap { flex: 1; min-width: 380px; }
+.sect-map-grid { display: inline-grid; gap: 2px; background: #111; border-radius: 8px; padding: 6px; border: 1px solid #333; }
+.sect-map-cell {
+  width: 42px; height: 42px; border-radius: 4px; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; cursor: default; position: relative;
+  font-size: 10px; transition: all .12s; border: 2px solid transparent; user-select: none;
+}
+.sect-map-cell.cell-outside { background: transparent; }
+.sect-map-cell.cell-wall { background: #2c1a1a; border-color: #5a2020; }
+.sect-map-cell.cell-border { background: #1a1a2e; border-color: #222; }
+.sect-map-cell.cell-border-white { background: #1e1e30; border-color: #2a2a3a; }
+.sect-map-cell.cell-ground { background: #1a2744; border-color: #2a3a5a; cursor: pointer; }
+.sect-map-cell.cell-ground-white { background: #1e2748; border-color: #2e3e5e; cursor: pointer; }
+.sect-map-cell.cell-ground:hover, .sect-map-cell.cell-ground-white:hover { border-color: #e94560; background: #1f3058; }
+.sect-map-cell.cell-road { background: #2a2a1a; border-color: #4a4a2a; cursor: pointer; }
+.sect-map-cell.cell-road:hover { border-color: #e94560; background: #353520; }
+.sect-map-cell.cell-gate { background: #3a2a1a; border-color: #8a6a2a; }
+.sect-map-cell.cell-gate .cell-icon { font-size: 16px; }
+.sect-map-cell.cell-wild { background: #1a3020; border-color: #2a4a2a; cursor: pointer; }
+.sect-map-cell.cell-wild:hover { border-color: #e94560; }
+.sect-map-cell.cell-cleared { background: #1a1a1a; border-color: #333; cursor: pointer; }
+.sect-map-cell.cell-cleared:hover { border-color: #e94560; }
+.sect-map-cell.cell-foundation-g { background: #2a2a1a; border-color: #3a3a2a; cursor: pointer; }
+.sect-map-cell.cell-foundation-w { background: #2a2a2e; border-color: #3a3a3e; cursor: pointer; }
+.sect-map-cell.cell-foundation-g:hover, .sect-map-cell.cell-foundation-w:hover { border-color: #e94560; background: #2f2f22; }
+.sect-map-cell.has-building { cursor: pointer; }
+.sect-map-cell.has-building:hover { border-color: #e94560; transform: scale(1.08); z-index: 2; }
+.sect-map-cell.cell-selected { border-color: #e94560 !important; box-shadow: 0 0 8px rgba(233,69,96,0.5); z-index: 3; }
+.sect-map-cell .cell-icon { font-size: 15px; line-height: 1; }
+.sect-map-cell .cell-lv {
+  font-size: 9px; color: #ffd700; font-weight: bold; line-height: 1;
+  text-shadow: 0 0 3px rgba(0,0,0,0.8);
+}
+.sect-map-cell.cell-core { background: linear-gradient(135deg, #3a1a2e, #2a1a3e); border-color: #e94560; }
+.sect-map-cell.cell-core .cell-icon { font-size: 18px; }
+.sect-map-cell.cell-special { background: linear-gradient(135deg, #1a2a3e, #1a3a2e); border-color: #2ecc71; }
+
+/* Building detail panel */
+.bld-detail { flex: 0 0 320px; min-width: 280px; }
+.bld-detail .card { position: sticky; top: 0; }
+.bld-detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.bld-detail-icon { font-size: 32px; }
+.bld-detail-name { font-size: 18px; color: #e94560; }
+.bld-detail-pos { font-size: 12px; color: #666; }
+.bld-lv-stars { display: flex; gap: 2px; margin: 8px 0; }
+.bld-lv-star { width: 24px; height: 24px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  font-size: 14px; cursor: pointer; border: 1px solid #333; background: #1a1a2e; transition: all .15s; }
+.bld-lv-star:hover { border-color: #e94560; }
+.bld-lv-star.active { background: #e94560; border-color: #e94560; color: #fff; }
+
+/* Batch controls */
+.batch-bar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; align-items: center; }
+.batch-bar button { padding: 4px 12px; border: 1px solid #333; background: #1a1a2e; color: #aaa;
+  border-radius: 4px; cursor: pointer; font-size: 12px; font-family: inherit; transition: all .15s; }
+.batch-bar button:hover { border-color: #e94560; color: #e0e0e0; }
+.batch-bar select { padding: 4px 8px; background: #1a1a2e; border: 1px solid #333; border-radius: 4px;
+  color: #e0e0e0; font-size: 12px; outline: none; }
+
+/* Legend */
+.map-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; font-size: 11px; color: #888; }
+.map-legend-item { display: flex; align-items: center; gap: 4px; }
+.map-legend-swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid #444; }
+
+/* Building list toggle */
+.bld-list-table { margin-top: 12px; }
+.bld-list-table .item-table td { font-size: 12px; padding: 4px 6px; }
+.bld-list-table .item-table th { font-size: 11px; padding: 4px 6px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>⚔ 龍胤立志傳 存档编辑器</h1>
+  <span class="save-info" id="saveInfo">未加载存档</span>
+  <button class="btn-load" onclick="loadFolder()">📂 加载存档</button>
+  <button class="btn-save" onclick="saveAll()">💾 保存存档</button>
+</div>
+
+<div class="tabs" id="mainTabs">
+  <div class="tab active" data-tab="heroes" onclick="switchMainTab('heroes')">🧑‍🤝‍🧑 门派弟子</div>
+  <div class="tab" data-tab="tempheroes" onclick="switchMainTab('tempheroes')">👤 江湖人物</div>
+  <div class="tab" data-tab="world" onclick="switchMainTab('world')">🗺 天下地图</div>
+</div>
+
+<div class="main">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="content" id="content">
+    <div class="empty"><div class="icon">📂</div><p>点击「加载存档」选择一个 SaveSlot 文件夹</p></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="data.js"></script>
+<script>
+// ===== GLOBALS =====
+let dirHandle = null;
+let saveData = { info: null, heroes: [], tempHeroes: [], save: null };
+let currentTab = 'heroes';
+let selectedIndex = 0;
+let heroSubTab = 'basic';
+
+const ATTRI_NAMES = ['臂力','体质','机略','悟性','根骨','魅力'];
+const FIGHT_NAMES = ['拳掌','指法','腿法','暗器','剑法','刀法','长兵','奇门','拳脚'];
+const LIVING_NAMES = ['锻造','制木','医术','毒术','织造','巧匠','厨艺','奇术','乐艺'];
+const ITEM_TYPES = {0:'装备',1:'丹药',2:'饮食',3:'秘籍',4:'珍宝',5:'材料',6:'马匹'};
+const ITEM_SUB_EQUIP = {0:'武器',1:'护甲',2:'头盔',3:'鞋子',4:'饰品'};
+const AREA_TYPES = {0:'城镇',1:'村庄',2:'门派'};
+const RARITY_NAMES = ['残品','下品','中品','上品','珍品','极品'];
+
+// Type-specific rarity names: item type -> rarity level -> {name, color}
+const RARE_LV_BY_TYPE = {
+  0: {5:'极品',4:'珍品',3:'上品',2:'中品',1:'下品',0:'残品'}, // equip
+  1: {5:'极品',4:'珍品',3:'上品',2:'中品',1:'下品',0:'残品'}, // dan
+  2: {5:'极品',4:'珍品',3:'上品',2:'中品',1:'下品',0:'残品'}, // food
+  3: {5:'完本',4:'珍本',3:'古本',2:'善本',1:'仿本',0:'残本'}, // book
+  4: null, // treasure - no rarity
+  5: {5:'极品',4:'珍品',3:'上品',2:'中品',1:'下品',0:'残品'}, // material
+  6: {5:'极品',4:'珍品',3:'上品',2:'中品',1:'下品',0:'残品'}, // horse
+  7: {5:'极品',4:'珍品',3:'上品',2:'中品',1:'下品',0:'残品'}  // saddle
+};
+const RARE_LV_COLORS = {5:'#dc2626',4:'#d97706',3:'#7c3aed',2:'#3b82f6',1:'#059669',0:'#6b7280'};
+
+function getRarityName(itemType, rareLv) {
+  const map = RARE_LV_BY_TYPE[itemType];
+  if (!map) return ''; // treasure has no rarity
+  return map[rareLv] || `品${rareLv}`;
+}
+function getRarityColor(rareLv) {
+  return RARE_LV_COLORS[rareLv] || '#6b7280';
+}
+
+const FORCE_MAP = {'-1':'无门派','0':'长乐帮','1':'唐门','2':'药王谷','3':'丐帮','4':'飞龙门','5':'茅山派','6':'铸剑山庄','7':'五毒教','8':'阎罗殿','9':'大隐阁','10':'少林寺','11':'武当派','12':'霸刀门','13':'蓬莱派','14':'峨眉派','15':'崆峒派','16':'神机门','17':'霹雳堂','18':'金刚密宗','19':'天山派','20':'聚义门','21':'黄河帮','22':'八卦门','23':'海沙帮','24':'铁掌帮','25':'仙霞派','26':'巨鲸帮','27':'金龙帮','28':'青城派','29':'伏牛派'};
+const FORCE_LV_CN = {6:'掌门',5:'副掌门',4:'长老',3:'亲传弟子',2:'正式弟子',1:'入门弟子',0:'外门弟子'};
+
+function getForceColor(forceId) {
+  const fc = (typeof GameData !== 'undefined' && GameData.FORCE_COLORS) ? GameData.FORCE_COLORS[String(forceId)] : null;
+  return fc ? fc.color : '#6b7280';
+}
+const NATURE_NAMES = ['纯粹','固执','稳重','忠厚','简单','灵活','潇洒','轻佻','算计','叛逆'];
+const GOVERN_LV_NAMES = {0:'九品壮班',1:'八品衙役',2:'七品捕头',3:'六品县尉',4:'五品团练推官',5:'四品节察判官',6:'三品巡按御史',7:'二品监察御史',8:'二品侍御史',9:'一品御史中丞',10:'一品御史大夫'};
+
+const ITEM_LV = {
+  6:{name:'绝世',color:'#dc2626'},5:{name:'绝世',color:'#dc2626'},
+  4:{name:'顶级/完美',color:'#d97706',skillName:'顶级',itemName:'完美'},
+  3:{name:'秘传/精良',color:'#7c3aed',skillName:'秘传',itemName:'精良'},
+  2:{name:'上乘/优质',color:'#3b82f6',skillName:'上乘',itemName:'优质'},
+  1:{name:'进阶/普通',color:'#059669',skillName:'进阶',itemName:'普通'},
+  0:{name:'基础/劣质',color:'#6b7280',skillName:'基础',itemName:'劣质'}
+};
+
+let SKILL_MAP = {}; // from GameData
+
+let SKILL_FORCE_MAP = {};
+let SKILL_DESC_MAP = {};
+let SKILLS_DATA = [];
+
+function initSkillMap() {
+  if (typeof GameData !== 'undefined' && GameData.SKILL_ID_TO_NAME) {
+    SKILL_MAP = GameData.SKILL_ID_TO_NAME;
+    console.log('[SkillMap] Loaded', Object.keys(SKILL_MAP).length, 'skills from GameData');
+  }
+  fetch('skills_data.json').then(r => r.ok ? r.json() : []).then(data => {
+    SKILLS_DATA = data;
+    data.forEach(sk => {
+      SKILL_FORCE_MAP[sk.id] = sk['所属势力'] || '江湖';
+      if (sk['描述']) SKILL_DESC_MAP[sk.id] = sk['描述'];
+    });
+    console.log('[SkillData] Loaded', data.length, 'skills from skills_data.json');
+  }).catch(e => console.warn('[SkillData] Failed:', e.message));
+}
+initSkillMap();
+
+function getSkillName(id) {
+  const d = SKILL_MAP[String(id)];
+  if (!d) return null;
+  return d[2]; // skill name
+}
+function getSkillType(id) {
+  const d = SKILL_MAP[String(id)];
+  return d ? d[0] : '未知';
+}
+function getSkillLvName(id) {
+  const d = SKILL_MAP[String(id)];
+  if (!d) return '';
+  const lv = d[1];
+  const info = ITEM_LV[lv];
+  if (!info) return '';
+  return info.skillName || info.name;
+}
+function getSkillLvColor(id) {
+  const d = SKILL_MAP[String(id)];
+  if (!d) return '#6b7280';
+  return (ITEM_LV[d[1]] || {}).color || '#6b7280';
+}
+function getSkillForce(id) {
+  return SKILL_FORCE_MAP[id] || '江湖';
+}
+function getSkillDesc(id) {
+  return SKILL_DESC_MAP[id] || '';
+}
+function getItemLvName(lv) {
+  const info = ITEM_LV[lv];
+  if (!info) return `Lv${lv}`;
+  return info.itemName || info.name;
+}
+function getItemLvColor(lv) {
+  return (ITEM_LV[lv] || {}).color || '#6b7280';
+}
+
+const TAG_NAMES = {
+0:'力道',1:'孔武有力',2:'力能抗鼎',3:'灵巧',4:'手疾眼快',5:'七窍玲珑',6:'智力',7:'足智多谋',8:'聪慧绝伦',9:'意志',10:'动心忍性',11:'百折不挠',12:'体质',13:'强身健体',14:'钢筋铁骨',15:'经脉',16:'运气自如',17:'奇经八脉',18:'内家',19:'内力精纯',20:'炉火纯青',21:'轻功',22:'飞檐走壁',23:'神出鬼没',24:'绝技',25:'身怀绝技',26:'绝艺超群',27:'拳掌',28:'拳不离手',29:'铁手钢拳',30:'御剑',31:'剑随意动',32:'人剑合一',33:'耍刀',34:'横刀跃马',35:'一刀两断',36:'长兵',37:'舞枪弄棒',38:'枪扫六合',39:'奇门',40:'旁门左道',41:'奇门遁甲',42:'射术',43:'百步穿杨',44:'例无虚发',45:'外门',46:'坚若磐石',47:'刀枪不入',48:'掌风',49:'排山倒海',50:'剑气',51:'气冲斗牛',52:'刀锋',53:'削铁无声',54:'枪芒',55:'枪出如龙',56:'奇技',57:'奇异莫名',58:'惊弓',59:'摘叶飞花',60:'脱胎换骨',61:'不老长生',62:'羽化登仙',63:'内息灼热',64:'焚身烈焰',65:'内息冰寒',66:'刺骨奇寒',67:'阴阳调和',68:'先天真气',69:'万物归墟',70:'混元一气',71:'至阳至刚',72:'至阴至柔',73:'刚柔并济',74:'物我两忘',75:'移形换位',76:'陆地飞行',77:'扭转乾坤',78:'不动如山',79:'神鬼莫测',80:'以劲御气',81:'艺成百家',82:'武学宗师',83:'登峰造极',84:'返璞归真',85:'起死回生',86:'天人合一',87:'功德圆满',88:'即身成佛',89:'太极圆转',90:'轰天震地',91:'十殿阎王',92:'力降十会',93:'医术',94:'术精岐黄',95:'妙手回春',96:'毒术',97:'五毒俱全',98:'见血封喉',99:'学识',100:'见多识广',101:'学富五车',102:'口才',103:'口齿伶俐',104:'舌灿莲花',105:'采伐',106:'披襟斩棘',107:'铸山煮海',108:'木植',109:'精耕细作',110:'万木争荣',111:'锻造',112:'千锤百炼',113:'鬼斧神工',114:'炼药',115:'对症下药',116:'灵丹妙药',117:'烹饪',118:'烩不厌细',119:'炮凤烹龙',120:'毒医',121:'以毒攻毒',122:'毒手药王',123:'医毒',124:'强壮',125:'魁梧奇伟',126:'天生神力',127:'瘦弱',128:'瘦骨嶙峋',129:'缚鸡之力',130:'机敏',131:'随机应变',132:'巧捷万端',133:'笨拙',134:'笨手笨脚',135:'东倒西歪',136:'聪慧',137:'天资过人',138:'旷世奇才',139:'愚钝',140:'傻头傻脑',141:'痴傻蒙昧',142:'勇敢',143:'身先士卒',144:'临危不乱',145:'懦弱',146:'战战兢兢',147:'胆小如鼠',148:'康健',149:'容光焕发',150:'百病不侵',151:'多病',152:'身心交病',153:'旧病沉疴',154:'顺脉',155:'脉络贯通',156:'先天气海',157:'滞脉',158:'脉络阻塞',159:'经脉断绝',160:'正直',161:'公正不阿',162:'浩气凛然',163:'阴险',164:'不择手段',165:'笑里藏刀',166:'仁慈',167:'宅心仁厚',168:'慈悲为怀',169:'残忍',170:'心狠手辣',171:'天心绝情',172:'冷静',173:'气定神闲',174:'心如止水',175:'暴躁',176:'性烈如火',177:'怒发冲冠',178:'幸运',179:'福星高照',180:'吉人天相',181:'不幸',182:'命途多舛',183:'天煞孤星',184:'美貌',185:'明眸皓齿',186:'倾国倾城',187:'丑陋',188:'面目可憎',189:'百丑千拙',190:'锐眼',191:'目光炯炯',192:'明察秋毫',193:'弱视',194:'视线模糊',195:'雾里看花',196:'谦逊',197:'不骄不躁',198:'虚怀若谷',199:'刚愎',200:'盛气凌人',201:'唯我独尊',202:'忠诚',203:'忠心耿耿',204:'至死不渝',205:'叛逆',206:'桀骜不驯',207:'离经叛道',208:'勤奋',209:'孜孜不倦',210:'废寝忘食',211:'懒惰',212:'游手好闲',213:'无所用心',214:'节俭',215:'精打细算',216:'取予有节',217:'浪费',218:'挥霍无度',219:'穷奢极欲',220:'练武',221:'武痴',222:'武学天才',223:'学医',224:'医师',225:'济世神医',226:'习文',227:'雅士',228:'文采斐然',229:'务农',230:'农家',231:'在世神农',232:'学徒',233:'工匠',234:'能工巧匠',235:'经商',236:'善贾',237:'囤积居奇',238:'从政',239:'仕官',240:'位极人臣',241:'杂学',242:'通才',243:'博学多才',244:'淡泊',245:'隐士',246:'避世绝俗',247:'儒术',248:'儒生',249:'鸿儒大学',250:'修道',251:'道士',252:'仙风道骨',253:'学佛',254:'禅师',255:'四大皆空',256:'行乞',257:'化缘',258:'游戏人间',259:'卜算',260:'相士',261:'未卜先知',262:'游侠',263:'侠客',264:'侠义无双',265:'赌徒',266:'嗜赌如命',267:'赌运亨通',268:'酒鬼',269:'放歌纵酒',270:'醉生梦死',271:'食客',272:'大快朵颐',273:'饕餮盛宴',274:'收藏',275:'去伪存真',276:'慧眼独具',277:'骑术',278:'纵马驰骋',279:'一骑绝尘',280:'读书',281:'博览群书',282:'皓首穷经',283:'瑶琴',284:'余音绕梁',285:'鸾吟凤唱',286:'弈棋',287:'棋高一着',288:'神机妙算',289:'书法',290:'笔走龙蛇',291:'铁画银钩',292:'绘画',293:'丹青妙手',294:'妙至毫巅',295:'吟诗',296:'文思泉涌',297:'七步成诗',298:'狩猎',299:'飞鹰走犬',300:'苍鹰搏兔',301:'云游',302:'游山玩水',303:'浪迹天涯',304:'静修',305:'深居简出',306:'面壁功深',307:'舞技',308:'舞态生风',309:'羽衣蹁跹',310:'随从',311:'唯命是从',312:'精明强干',313:'军师',314:'排兵布阵',315:'运筹帷幄',316:'领袖',317:'胸怀大志',318:'雄才伟略',319:'先锋',320:'奋勇当先',321:'背水一战',322:'守备',323:'戒备森严',324:'严防死守',325:'游斗',326:'快步流星',327:'千里奔袭',328:'精力充沛',329:'腊八粥',330:'微醺',331:'痛饮',332:'大醉',333:'酩酊',334:'宴会无趣',335:'宴会平平',336:'宴会满意',337:'宴会欢喜',338:'宴会极乐',339:'赌运',340:'霉运',341:'论胜',342:'论败',343:'轻症',344:'中症',345:'重症',346:'危症',347:'气息不调',348:'内息紊乱',349:'经脉受阻',350:'经脉断绝',351:'断臂',352:'跛足',353:'目沙',354:'理论心得',355:'实战心得',356:'机关木臂',357:'机关石臂',358:'机关铁臂',359:'机关木轮',360:'机关石轮',361:'机关铁轮',362:'机关木甲',363:'机关石甲',364:'机关铁甲',365:'机关大师',366:'鲁班在世',367:'机关义手(负面)',368:'手镯',369:'脚镣',370:'机关义手(负面)',371:'机关义手(绿)',372:'机关义手(蓝)',373:'机关义手(橙)',374:'登顶泰岳',375:'负心人',376:'修行心得',377:'刮骨疗毒',378:'百毒不侵',379:'天下第一',380:'归隐田园',381:'豪商巨贾',382:'功成名就',383:'禁军统领',384:'权势滔天',385:'名门大派',386:'武林盟主',387:'终归一统',388:'鸾凤和鸣',389:'终生监禁'
+};
+
+const EQUIP_STAT_NAMES = {
+0:'力道',1:'灵巧',2:'智力',3:'意志',4:'体质',5:'经脉',6:'内功',7:'轻功',8:'绝技',9:'掌法',10:'剑法',11:'刀法',12:'长兵',13:'奇门',14:'射术',15:'内功威力%',16:'轻功威力%',17:'绝技威力%',18:'掌法威力%',19:'剑法威力%',20:'刀法威力%',21:'长兵威力%',22:'奇门威力%',23:'射术威力%',24:'医术',25:'毒术',26:'学识',27:'口才',28:'采伐',29:'木植',30:'锻造',31:'炼丹',32:'烹饪',33:'力道潜力',34:'灵巧潜力',35:'智力潜力',36:'意志潜力',37:'体质潜力',38:'经脉潜力',39:'内功潜力',40:'轻功潜力',41:'绝技潜力',42:'掌法潜力',43:'剑法潜力',44:'刀法潜力',45:'长兵潜力',46:'奇门潜力',47:'射术潜力',48:'医术潜力',49:'毒术潜力',50:'学识潜力',51:'口才潜力',52:'采伐潜力',53:'木植潜力',54:'锻造潜力',55:'炼丹潜力',56:'烹饪潜力',57:'生命上限',58:'体力上限',59:'内力上限',60:'伤害加成',61:'护甲',62:'护甲率%',63:'速度%',64:'命中%',65:'闪避%',66:'暴击率%',67:'卸力%',68:'反击%',69:'压制%',70:'连击%',71:'断联%',72:'经验获取%',73:'恢复效率%',74:'伤害抗性%',75:'负面加成%',76:'负面抗性%',77:'伤势抗性%',78:'失衡%',79:'急速%',80:'外伤%',81:'内伤%',82:'毒素%',83:'吸血%',84:'吸内%',85:'削内%',86:'恢复效率%',87:'灼烧%',88:'疗伤%',89:'流血%',90:'调息%',91:'雷电%',92:'蓄力%',93:'疲劳%',94:'寒冰%',95:'无敌%',96:'眩晕%',97:'手臂点穴%',98:'腿足点穴%',99:'心胸点穴%',100:'腰腹点穴%',101:'头颈点穴%',102:'虚弱%',103:'横练%',104:'破甲%',105:'轻灵%',106:'迟缓%',107:'鹰眼%',108:'目盲%',109:'飘逸%',110:'笨拙%',111:'霸体%',112:'弱电%',113:'疯魔%',114:'混乱%',115:'死战%',116:'穿甲%',117:'壮骨%',118:'断骨%',119:'舒筋%',120:'伤筋%',121:'醒脑%',122:'震脑%',123:'定神%',124:'乱神%',125:'活血%',126:'凝血%',127:'通脉%',128:'截脉%',129:'复生%',130:'反伤%',131:'反伤吸内%',132:'反伤削内%',133:'击退%',134:'拉近%',135:'慧眼%',136:'昏沉%',137:'铜皮%',138:'脆弱%',139:'不屈%',140:'重碾%',141:'连绵%',142:'断腕%',143:'断招%',144:'阻滞%',145:'杀机%',146:'康复%',147:'不愈%',148:'坚毅%',149:'动摇%',150:'内劲%',151:'真伤%',152:'回血%',153:'回内%',154:'回体',155:'自愈',156:'护头',157:'护心',158:'护胸',159:'护腹',160:'护手',161:'护足',162:'护体真气%',163:'反弹%',164:'减伤',165:'定身%',166:'移距',167:'神行%',168:'裂膝%',169:'破招%',170:'拆招%',171:'斗转%',172:'声望获取%',173:'功绩获取%',174:'旅行速度%',175:'疗伤效率%',176:'实战经验%',177:'理论经验%',178:'技艺经验%',179:'内功经验%',180:'轻功经验%',181:'绝技经验%',182:'掌法经验%',183:'剑法经验%',184:'刀法经验%',185:'长兵经验%',186:'奇门经验%',187:'射术经验%',188:'医术经验%',189:'毒术经验%',190:'学识经验%',191:'口才经验%',192:'采伐经验%',193:'木植经验%',194:'锻造经验%',195:'炼丹经验%',196:'烹饪经验%',197:'买卖优势%',198:'拳掌距离',199:'剑法距离',200:'刀法距离',201:'长兵距离',202:'奇门距离',203:'射术距离',204:'坐骑加成%',205:'装备强化%',206:'抗耐药性%',207:'装备重量',208:'机关伤害%',209:'机关速度%',210:'机关耐久%',211:'城防耐久%',212:'好感获取%',213:'本门武学威力%',214:'恶名减少%'
+};
+
+// Color tiers for tags: green(1-tier), blue(2-tier), orange(3-tier), buff(328+), negative debuff
+function getTagColor(id) {
+  // Buff/debuff range (328+)
+  if (id >= 328 && id <= 355) return '#f39c12'; // buff - yellow
+  if (id >= 356 && id <= 373) return '#1abc9c'; // mechanical
+  if (id >= 374) return '#e94560'; // special/ending
+  // Negative traits (odd groups starting from 127)
+  const negatives = [127,128,129,133,134,135,139,140,141,145,146,147,151,152,153,157,158,159,163,164,165,169,170,171,175,176,177,181,182,183,187,188,189,193,194,195,199,200,201,205,206,207,211,212,213,217,218,219,343,344,345,346,347,348,349,350,351,352,353,367,368,369,370,375,389];
+  if (negatives.includes(id)) return '#e74c3c'; // red for negative
+  // Tier system: within each group of 3, index 0=green, 1=blue, 2=orange
+  const mod = id % 3;
+  if (mod === 0) return '#2ecc71'; // green
+  if (mod === 1) return '#3498db'; // blue
+  return '#e67e22'; // orange
+}
+
+// ===== FILE I/O =====
+async function loadFolder() {
+  try {
+    console.log('[Load] Opening directory picker...');
+    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    console.log('[Load] Directory selected:', dirHandle.name);
+
+    // List all files in the directory
+    console.log('[Load] Listing directory contents:');
+    for await (const entry of dirHandle.values()) {
+      console.log(`  [${entry.kind}] ${entry.name}`);
+    }
+
+    await readSaveFiles();
+    toast('存档加载成功');
+  } catch(e) {
+    console.error('[Load] FAILED:', e);
+    console.error('[Load] Error name:', e.name, 'message:', e.message);
+    console.error('[Load] Stack:', e.stack);
+    if (e.name !== 'AbortError') toast('加载失败: ' + e.message, true);
+  }
+}
+
+async function readFile(name) {
+  try {
+    console.log(`[ReadFile] Getting handle for: "${name}"`);
+    const fh = await dirHandle.getFileHandle(name);
+    console.log(`[ReadFile] Got handle, reading file: "${name}"`);
+    const file = await fh.getFile();
+    console.log(`[ReadFile] File "${name}" size: ${file.size} bytes, type: "${file.type}"`);
+    const text = await file.text();
+    console.log(`[ReadFile] File "${name}" text length: ${text.length}, first 200 chars:`, text.substring(0, 200));
+    return text;
+  } catch(e) {
+    console.error(`[ReadFile] FAILED to read "${name}":`, e);
+    throw e;
+  }
+}
+
+async function writeFile(name, content) {
+  const fh = await dirHandle.getFileHandle(name, { create: true });
+  const wr = await fh.createWritable();
+  await wr.write(content);
+  await wr.close();
+}
+
+async function readSaveFiles() {
+  try {
+    console.log('[Parse] Reading Info...');
+    const infoText = await readFile('Info');
+    saveData.info = JSON.parse(infoText);
+    console.log('[Parse] Info parsed OK:', saveData.info);
+  } catch(e) {
+    console.error('[Parse] FAILED to parse Info:', e);
+    throw new Error('Info 文件解析失败: ' + e.message);
+  }
+
+  try {
+    console.log('[Parse] Reading Hero...');
+    const heroText = await readFile('Hero');
+    saveData.heroes = JSON.parse(heroText);
+    console.log('[Parse] Hero parsed OK, count:', saveData.heroes.length);
+  } catch(e) {
+    console.error('[Parse] FAILED to parse Hero:', e);
+    throw new Error('Hero 文件解析失败: ' + e.message);
+  }
+
+  try {
+    console.log('[Parse] Reading TempHero...');
+    const tempText = await readFile('TempHero');
+    saveData.tempHeroes = JSON.parse(tempText);
+    console.log('[Parse] TempHero parsed OK, count:', saveData.tempHeroes.length);
+  } catch(e) {
+    console.error('[Parse] FAILED to parse TempHero:', e);
+    throw new Error('TempHero 文件解析失败: ' + e.message);
+  }
+
+  try {
+    console.log('[Parse] Reading Save...');
+    const saveText = await readFile('Save');
+    saveData.save = JSON.parse(saveText);
+    console.log('[Parse] Save parsed OK, areas count:', saveData.save.Areas?.length);
+  } catch(e) {
+    console.error('[Parse] FAILED to parse Save:', e);
+    throw new Error('Save 文件解析失败: ' + e.message);
+  }
+
+  console.log('[Parse] All files loaded successfully');
+  console.log(`[Parse] Heroes: ${saveData.heroes.length} (${saveData.heroes.filter(h=>h!==null).length} non-null)`);
+  console.log(`[Parse] TempHeroes: ${saveData.tempHeroes.length} (${saveData.tempHeroes.filter(h=>h!==null).length} non-null)`);
+  console.log(`[Parse] Areas: ${saveData.save.Areas?.length}`);
+
+  document.getElementById('saveInfo').textContent =
+    `${saveData.info.SaveDetail.replace(/\n/g,' | ').replace(/<[^>]*>/g,'')} — ${saveData.info.SaveTime}`;
+
+  selectedIndex = 0;
+  renderSidebar();
+  renderContent();
+}
+
+async function backupFiles() {
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+  const files = ['Hero', 'TempHero', 'Save', 'Info'];
+  const backupDir = await dirHandle.getDirectoryHandle('backup', { create: true });
+  const tsDir = await backupDir.getDirectoryHandle(timestamp, { create: true });
+  let backed = 0;
+  for (const name of files) {
+    try {
+      const fh = await dirHandle.getFileHandle(name);
+      const file = await fh.getFile();
+      const content = await file.text();
+      const backupFh = await tsDir.getFileHandle(name, { create: true });
+      const wr = await backupFh.createWritable();
+      await wr.write(content);
+      await wr.close();
+      backed++;
+    } catch(e) { /* file might not exist yet, skip */ }
+  }
+  return { backed, timestamp };
+}
+
+async function saveAll() {
+  if (!dirHandle) { toast('请先加载存档', true); return; }
+  try {
+    const { backed, timestamp } = await backupFiles();
+    console.log(`[Backup] ${backed} files backed up to backup/ with timestamp ${timestamp}`);
+    await writeFile('Hero', JSON.stringify(saveData.heroes));
+    await writeFile('TempHero', JSON.stringify(saveData.tempHeroes));
+    await writeFile('Save', JSON.stringify(saveData.save));
+    await writeFile('Info', JSON.stringify(saveData.info));
+    toast(`存档保存成功 (已备份 ${backed} 个文件 → backup/${timestamp})`);
+  } catch(e) { toast('保存失败: ' + e.message, true); }
+}
+
+// ===== TABS =====
+function switchMainTab(tab) {
+  currentTab = tab;
+  selectedIndex = 0;
+  heroSubTab = 'basic';
+  document.querySelectorAll('#mainTabs .tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === tab));
+  renderSidebar();
+  renderContent();
+}
+
+// ===== SIDEBAR =====
+function renderSidebar() {
+  const sb = document.getElementById('sidebar');
+  if (!dirHandle) { sb.innerHTML = ''; return; }
+
+  let items = [];
+  if (currentTab === 'heroes') items = saveData.heroes;
+  else if (currentTab === 'tempheroes') items = saveData.tempHeroes;
+  else if (currentTab === 'world') items = (saveData.save?.Areas || []);
+
+  let html = `<div class="sidebar-search"><input type="text" placeholder="搜索..." oninput="filterSidebar(this.value)"></div>`;
+
+  if (currentTab === 'world') {
+    html += `<div class="sidebar-header">地区 (${items.length})</div>`;
+    items.forEach((a, i) => {
+      const aType = getAreaType(a.areaID);
+      const tagClass = aType === 0 ? 'tag-city' : aType === 1 ? 'tag-village' : 'tag-sect';
+      const tagText = aType === 0 ? '城' : aType === 1 ? '村' : '派';
+      html += `<div class="sidebar-item${i===selectedIndex?' active':''}" data-idx="${i}" data-name="${a.areaName}" onclick="selectItem(${i})">
+        <span class="name">${a.areaName}</span>
+        <span class="tag ${tagClass}">${tagText}</span>
+      </div>`;
+    });
+  } else {
+    const label = currentTab === 'heroes' ? '弟子' : '江湖人物';
+    html += `<div class="sidebar-header">${label} (${items.length})</div>`;
+    items.forEach((h, i) => {
+      if (!h) return; // skip null entries
+      let tags = '';
+      const forceLvName = FORCE_LV_CN[h.heroForceLv];
+      if (forceLvName && h.belongForceID >= 0) {
+        const displayRank = h.isLeader ? '掌门' : forceLvName;
+        const displayLv = h.isLeader ? 6 : h.heroForceLv;
+        const flvColor = (ITEM_LV[displayLv]||{}).color || '#6b7280';
+        tags += `<span class="tag" style="background:${flvColor};color:#fff">${displayRank}</span>`;
+      }
+      if (h.dead) tags += '<span class="tag tag-dead">已故</span>';
+      tags += `<span class="tag ${h.isFemale?'tag-female':'tag-male'}">${h.isFemale?'♀':'♂'}</span>`;
+      if (currentTab === 'tempheroes') tags += '<span class="tag tag-temp">临</span>';
+      const sub = FORCE_MAP[h.belongForceID] || (h.belongForceID >= 0 ? `势力${h.belongForceID}` : '无门派');
+      const forceColor = getForceColor(h.belongForceID);
+      html += `<div class="sidebar-item${i===selectedIndex?' active':''}" data-idx="${i}" data-name="${h.heroName}" data-id="${h.heroID}" onclick="selectItem(${i})">
+        <span style="font-size:11px;color:#555;min-width:30px">${h.heroID}</span>
+        <span class="name">${h.heroName}${h.heroNickName ? `<span style="font-size:10px;color:#888;margin-left:4px">${h.heroNickName}</span>` : ''}</span>
+        <span class="sub" style="color:${forceColor}">${sub}</span>
+        ${tags}
+      </div>`;
+    });
+  }
+  sb.innerHTML = html;
+}
+
+function filterSidebar(q) {
+  q = q.toLowerCase();
+  document.querySelectorAll('.sidebar-item').forEach(el => {
+    const name = (el.dataset.name||'').toLowerCase();
+    const id = el.dataset.id || '';
+    el.style.display = (name.includes(q) || id.includes(q)) ? '' : 'none';
+  });
+}
+
+function selectItem(idx) {
+  selectedIndex = idx;
+  heroSubTab = currentTab === 'world' ? 'area' : 'basic';
+  openItemIdx = -1;
+  openSkillIdx = -1;
+  window._selectedMapTile = -1;
+  document.querySelectorAll('.sidebar-item').forEach((el,i) =>
+    el.classList.toggle('active', parseInt(el.dataset.idx) === idx));
+  renderContent();
+}
+
+// ===== CONTENT =====
+function renderContent() {
+  const c = document.getElementById('content');
+  if (!dirHandle) { c.innerHTML = '<div class="empty"><div class="icon">📂</div><p>点击「加载存档」选择一个 SaveSlot 文件夹</p></div>'; return; }
+
+  if (currentTab === 'world') renderArea(c);
+  else renderHero(c);
+}
+
+// ===== HERO RENDER =====
+function renderHero(c) {
+  const list = currentTab === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  if (!list.length) { c.innerHTML = '<div class="empty"><p>无数据</p></div>'; return; }
+  const h = list[selectedIndex];
+  if (!h) { c.innerHTML = '<div class="empty"><p>该位置数据为空 (null)</p></div>'; return; }
+
+  const tabs = [
+    {id:'basic',label:'基本信息'},{id:'attri',label:'属性'},
+    {id:'tags',label:'天赋'},
+    {id:'skills',label:'武学'},{id:'items',label:'物品'},
+    {id:'relations',label:'关系'}
+  ];
+
+  let html = `<div class="sub-tabs">${tabs.map(t =>
+    `<div class="sub-tab${heroSubTab===t.id?' active':''}" onclick="heroSubTab='${t.id}';renderContent()">${t.label}</div>`
+  ).join('')}</div>`;
+
+  const src = currentTab === 'heroes' ? 'heroes' : 'tempHeroes';
+
+  if (heroSubTab === 'basic') html += renderHeroBasic(h, src);
+  else if (heroSubTab === 'attri') html += renderHeroAttri(h, src);
+  else if (heroSubTab === 'tags') html += renderHeroTags(h, src);
+  else if (heroSubTab === 'skills') html += renderHeroSkills(h, src);
+  else if (heroSubTab === 'items') html += renderHeroItems(h, src);
+  else if (heroSubTab === 'relations') html += renderHeroRelations(h, src);
+
+  c.innerHTML = html;
+}
+
+function heroPath(src) { return `saveData.${src}[${selectedIndex}]`; }
+
+function renderHeroBasic(h, src) {
+  const p = heroPath(src);
+  return `
+  <div class="card"><div class="card-title">基本信息</div>
+    <div class="field-grid">
+      ${field('姓名', 'text', h.heroName, `${p}.heroName`)}
+      ${field('姓氏', 'text', h.heroFamilyName, `${p}.heroFamilyName`)}
+      ${field('外号', 'text', h.heroNickName||'', `${p}.heroNickName`)}
+      ${field('年龄', 'number', h.age, `${p}.age`)}
+      ${field('性别', 'select', h.isFemale, `${p}.isFemale`, [{v:false,l:'男'},{v:true,l:'女'}])}
+      ${field('世代', 'number', h.generation, `${p}.generation`)}
+      ${fieldSelect('性格', h.nature, `${p}.nature`, NATURE_NAMES.map((n,i)=>({v:i,l:n})))}
+      ${field('天赋', 'number', h.talent, `${p}.talent`)}
+      ${fieldSelect('所属门派', h.belongForceID, `${p}.belongForceID`, Object.entries(FORCE_MAP).map(([k,v])=>({v:parseInt(k),l:v})))}
+      ${fieldSelect('门派职位', h.heroForceLv, `${p}.heroForceLv`, Object.entries(FORCE_LV_CN).map(([k,v])=>({v:parseInt(k),l:v})))}
+      ${field('掌门', 'select', h.isLeader, `${p}.isLeader`, [{v:false,l:'否'},{v:true,l:'是'}])}
+      ${field('已故', 'select', h.dead, `${p}.dead`, [{v:false,l:'否'},{v:true,l:'是'}])}
+      ${field('隐藏', 'select', h.hide, `${p}.hide`, [{v:false,l:'否'},{v:true,l:'是'}])}
+    </div>
+  </div>
+  <div class="card"><div class="card-title">状态</div>
+    <div class="field-grid">
+      ${field('生命', 'number', r2(h.hp), `${p}.hp`)}
+      ${field('最大生命', 'number', r2(h.maxhp), `${p}.maxhp`)}
+      ${field('真实最大生命', 'number', r2(h.realMaxHp), `${p}.realMaxHp`)}
+      ${field('体力', 'number', r2(h.power), `${p}.power`)}
+      ${field('最大体力', 'number', r2(h.maxPower), `${p}.maxPower`)}
+      ${field('内力', 'number', r2(h.mana), `${p}.mana`)}
+      ${field('最大内力', 'number', r2(h.maxMana), `${p}.maxMana`)}
+      ${field('护甲', 'number', r2(h.armor), `${p}.armor`)}
+      ${field('外伤', 'number', r2(h.externalInjury), `${p}.externalInjury`)}
+      ${field('内伤', 'number', r2(h.internalInjury), `${p}.internalInjury`)}
+      ${field('中毒', 'number', r2(h.poisonInjury), `${p}.poisonInjury`)}
+    </div>
+  </div>
+  <div class="card"><div class="card-title">声望与阵营</div>
+    <div class="field-grid">
+      ${field('名望', 'number', r2(h.fame), `${p}.fame`)}
+      ${field('恶名', 'number', r2(h.badFame), `${p}.badFame`)}
+      ${field('善恶', 'number', r2(h.evil), `${p}.evil`)}
+      ${field('正邪', 'number', r2(h.chaos), `${p}.chaos`)}
+      ${field('忠诚', 'number', r2(h.loyal), `${p}.loyal`)}
+      ${field('贡献', 'number', r2(h.forceContribution), `${p}.forceContribution`)}
+      ${field('俸禄', 'number', h.salary, `${p}.salary`)}
+      ${field('银两', 'number', h.itemListData?.money||0, `${p}.itemListData.money`)}
+      ${h.isGovern ? fieldSelect('官职', h.governLv, `${p}.governLv`, Object.entries(GOVERN_LV_NAMES).map(([k,v])=>({v:parseInt(k),l:v}))) : ''}
+    </div>
+  </div>` + (h.heroID === 0 ? renderPlayerForceContribution() : '');
+}
+
+function renderHeroAttri(h, src) {
+  const p = heroPath(src);
+
+  // Header row for the 3-value columns
+  const colHeader = `<div style="display:flex;gap:8px;margin-bottom:4px;justify-content:flex-end">
+    <span style="width:70px;font-size:10px;color:#555;text-align:center">当前值</span>
+    <span style="width:70px;font-size:10px;color:#2ecc71;text-align:center">基础值</span>
+    <span style="width:70px;font-size:10px;color:#e67e22;text-align:center">上限值</span>
+  </div>`;
+
+  let html = `<div class="card"><div class="card-title">六维属性</div>${colHeader}`;
+  const maxVal = 200;
+  const colors = ['str','agi','int','con','per','cha'];
+  ATTRI_NAMES.forEach((name, i) => {
+    const base = h.baseAttri[i], total = h.totalAttri[i], mx = h.maxAttri[i];
+    const pct = Math.min(100, (total/maxVal)*100);
+    html += `<div class="stat-row">
+      <span class="stat-label">${name}</span>
+      <div class="stat-bar-bg"><div class="stat-bar ${colors[i]}" style="width:${pct}%"></div>
+        <span class="stat-bar-text">${r2(total)}</span></div>
+      <input type="number" step="any" style="width:70px" value="${r2(total)}" title="当前值"
+        onchange="setVal('${p}.totalAttri[${i}]',parseFloat(this.value)||0);renderContent()">
+      <input type="number" step="any" style="width:70px;color:#2ecc71" value="${r2(base)}" title="基础值"
+        onchange="updateBase('${p}.baseAttri[${i}]','${p}.totalAttri[${i}]',${base},this.value);renderContent()">
+      <input type="number" step="any" style="width:70px;color:#e67e22" value="${r2(mx)}" title="上限值"
+        onchange="setVal('${p}.maxAttri[${i}]',parseFloat(this.value)||0);renderContent()">
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="card"><div class="card-title">武学技能</div>${colHeader}`;
+  FIGHT_NAMES.forEach((name, i) => {
+    const base = h.baseFightSkill[i], total = h.totalFightSkill[i], mx = h.maxFightSkill[i];
+    const pct = Math.min(100, (total/200)*100);
+    html += `<div class="stat-row">
+      <span class="stat-label">${name}</span>
+      <div class="stat-bar-bg"><div class="stat-bar str" style="width:${pct}%"></div>
+        <span class="stat-bar-text">${r2(total)}</span></div>
+      <input type="number" step="any" style="width:70px" value="${r2(total)}" title="当前值"
+        onchange="setVal('${p}.totalFightSkill[${i}]',parseFloat(this.value)||0);renderContent()">
+      <input type="number" step="any" style="width:70px;color:#2ecc71" value="${r2(base)}" title="基础值"
+        onchange="updateBase('${p}.baseFightSkill[${i}]','${p}.totalFightSkill[${i}]',${base},this.value);renderContent()">
+      <input type="number" step="any" style="width:70px;color:#e67e22" value="${r2(mx)}" title="上限值"
+        onchange="setVal('${p}.maxFightSkill[${i}]',parseFloat(this.value)||0);renderContent()">
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="card"><div class="card-title">生活技能</div>${colHeader}`;
+  LIVING_NAMES.forEach((name, i) => {
+    const base = h.baseLivingSkill[i], total = h.totalLivingSkill[i], mx = h.maxLivingSkill[i];
+    const pct = Math.min(100, (total/120)*100);
+    html += `<div class="stat-row">
+      <span class="stat-label">${name}</span>
+      <div class="stat-bar-bg"><div class="stat-bar agi" style="width:${pct}%"></div>
+        <span class="stat-bar-text">${r2(total)}</span></div>
+      <input type="number" step="any" style="width:70px" value="${r2(total)}" title="当前值"
+        onchange="setVal('${p}.totalLivingSkill[${i}]',parseFloat(this.value)||0);renderContent()">
+      <input type="number" step="any" style="width:70px;color:#2ecc71" value="${r2(base)}" title="基础值"
+        onchange="updateBase('${p}.baseLivingSkill[${i}]','${p}.totalLivingSkill[${i}]',${base},this.value);renderContent()">
+      <input type="number" step="any" style="width:70px;color:#e67e22" value="${r2(mx)}" title="上限值"
+        onchange="setVal('${p}.maxLivingSkill[${i}]',parseFloat(this.value)||0);renderContent()">
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+// When base changes, also adjust total by the same delta
+function updateBase(basePath, totalPath, oldBase, newBaseStr) {
+  const newBase = parseFloat(newBaseStr) || 0;
+  const delta = newBase - oldBase;
+  setVal(basePath, newBase);
+  // Read current total and add delta
+  try {
+    const currentTotal = new Function('saveData', 'return ' + totalPath)(saveData);
+    setVal(totalPath, (currentTotal || 0) + delta);
+  } catch(e) { console.error('updateBase error:', e); }
+}
+
+function isBuffTag(id) {
+  return id >= 328;
+}
+
+function renderHeroTags(h, src) {
+  const p = heroPath(src);
+  const tags = h.heroTagData || [];
+  const talentTags = tags.filter(t => !isBuffTag(t.tagID));
+  const buffTags = tags.filter(t => isBuffTag(t.tagID));
+
+  let html = `<div class="card"><div class="card-title">天赋 (${talentTags.length}) — 总点数: <input type="number" step="any" value="${r2(h.heroTagPoint || 0)}" style="width:80px;padding:2px 6px;background:#1a1a2e;border:1px solid #333;color:#e94560;border-radius:3px;font-size:14px" onchange="setVal('${p}.heroTagPoint',parseFloat(this.value)||0)"></div>`;
+
+  // Add talent
+  html += `<div class="tag-add-row">
+    <select id="addTagSelect">
+      <option value="">— 选择天赋 —</option>`;
+  const talentIds = Object.keys(TAG_NAMES).map(Number).filter(id => !isBuffTag(id)).sort((a,b) => a - b);
+  talentIds.forEach(id => {
+    const existing = tags.some(t => t.tagID === id);
+    html += `<option value="${id}" ${existing?'disabled':''}>${id}: ${TAG_NAMES[id]}${existing?' (已有)':''}</option>`;
+  });
+  html += `</select>
+    <input id="addTagTime" type="number" value="-1" style="width:80px" title="持续时间 (-1=永久)">
+    <span style="font-size:11px;color:#666">(-1=永久)</span>
+    <button class="tag-add-btn" onclick="addTag('${src}')">+ 添加天赋</button>
+  </div>`;
+
+  if (!talentTags.length) {
+    html += '<p style="color:#666;padding:8px">无天赋</p>';
+  } else {
+    talentTags.forEach(tag => {
+      const i = tags.indexOf(tag);
+      html += renderTagRow(tag, i, p, src);
+    });
+  }
+  html += `</div>`;
+
+  // Buff section
+  html += `<div class="card"><div class="card-title">状态/Buff (${buffTags.length})</div>`;
+
+  html += `<div class="tag-add-row">
+    <select id="addBuffSelect">
+      <option value="">— 选择状态 —</option>`;
+  const buffIds = Object.keys(TAG_NAMES).map(Number).filter(id => isBuffTag(id)).sort((a,b) => a - b);
+  buffIds.forEach(id => {
+    const existing = tags.some(t => t.tagID === id);
+    html += `<option value="${id}" ${existing?'disabled':''}>${id}: ${TAG_NAMES[id]}${existing?' (已有)':''}</option>`;
+  });
+  html += `</select>
+    <input id="addBuffTime" type="number" value="-1" style="width:80px" title="持续时间 (-1=永久)">
+    <span style="font-size:11px;color:#666">(-1=永久)</span>
+    <button class="tag-add-btn" onclick="addBuff('${src}')">+ 添加状态</button>
+  </div>`;
+
+  if (!buffTags.length) {
+    html += '<p style="color:#666;padding:8px">无状态</p>';
+  } else {
+    buffTags.forEach(tag => {
+      const i = tags.indexOf(tag);
+      html += renderTagRow(tag, i, p, src);
+    });
+  }
+  html += `</div>`;
+
+  return html;
+}
+
+function renderTagRow(tag, i, p, src) {
+  const name = TAG_NAMES[tag.tagID] ?? `未知(${tag.tagID})`;
+  const color = getTagColor(tag.tagID);
+  const timeText = tag.leftTime === -1 ? '永久' : `${r2(tag.leftTime)} 天`;
+  const sourceText = tag.sourceHero != null ? heroLink(tag.sourceHero) : '';
+
+  return `<div class="tag-item">
+    <span class="tag-id">#${tag.tagID}</span>
+    <span class="tag-badge" style="background:${color};color:#fff">${name}</span>
+    <span class="tag-time" style="flex:1">
+      ⏱ <input type="number" step="any" value="${tag.leftTime}" style="width:70px;padding:2px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px"
+        onchange="setVal('${p}.heroTagData[${i}].leftTime',parseFloat(this.value));renderContent()"
+        title="持续时间 (-1=永久)"> <span style="font-size:11px;color:#555">${timeText}</span>
+    </span>
+    ${sourceText ? `<span class="tag-source">来源: ${sourceText}</span>` : ''}
+    <button class="tag-remove" onclick="removeTag('${src}',${i})">✕ 移除</button>
+  </div>`;
+}
+
+function addTag(src) {
+  const sel = document.getElementById('addTagSelect');
+  const timeInput = document.getElementById('addTagTime');
+  const tagID = parseInt(sel.value);
+  if (isNaN(tagID)) { toast('请选择一个天赋', true); return; }
+  const leftTime = parseFloat(timeInput.value) || -1;
+  const list = src === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  const h = list[selectedIndex];
+  if (!h) return;
+  if (!h.heroTagData) h.heroTagData = [];
+  h.heroTagData.push({ tagID: tagID, leftTime: leftTime, sourceHero: null });
+  toast(`已添加: ${TAG_NAMES[tagID] || tagID}`);
+  renderContent();
+}
+
+function addBuff(src) {
+  const sel = document.getElementById('addBuffSelect');
+  const timeInput = document.getElementById('addBuffTime');
+  const tagID = parseInt(sel.value);
+  if (isNaN(tagID)) { toast('请选择一个状态', true); return; }
+  const leftTime = parseFloat(timeInput.value) || -1;
+  const list = src === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  const h = list[selectedIndex];
+  if (!h) return;
+  if (!h.heroTagData) h.heroTagData = [];
+  h.heroTagData.push({ tagID: tagID, leftTime: leftTime, sourceHero: null });
+  toast(`已添加: ${TAG_NAMES[tagID] || tagID}`);
+  renderContent();
+}
+
+function removeTag(src, idx) {
+  const list = src === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  const h = list[selectedIndex];
+  if (!h || !h.heroTagData) return;
+  const removed = h.heroTagData.splice(idx, 1)[0];
+  toast(`已移除: ${TAG_NAMES[removed?.tagID] || removed?.tagID}`);
+  renderContent();
+}
+
+let openSkillIdx = -1;
+let skillFilterType = 'all';
+let skillFilterLv = 'all';
+let skillFilterForce = 'all';
+
+function renderHeroSkills(h, src) {
+  const p = heroPath(src);
+  const skills = h.kungfuSkills || [];
+
+  // Collect available types and levels for filters
+  const availTypes = new Set();
+  const availLvs = new Set();
+  skills.forEach(sk => {
+    availTypes.add(getSkillType(sk.skillID));
+    const d = SKILL_MAP[String(sk.skillID)];
+    if (d) availLvs.add(d[1]);
+  });
+
+  let html = `<div class="card"><div class="card-title">武学 (${skills.length})</div>`;
+
+  // Filters
+  html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+    <select onchange="skillFilterType=this.value;renderContent()" style="padding:4px 8px;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#e0e0e0;font-size:12px">
+      <option value="all" ${skillFilterType==='all'?'selected':''}>全部类型</option>`;
+  ['内功','轻功','绝技','拳掌','剑法','刀法','长兵','奇门','射术'].forEach(t => {
+    if (availTypes.has(t)) html += `<option value="${t}" ${skillFilterType===t?'selected':''}>${t}</option>`;
+  });
+  // any extra types not in the standard list
+  availTypes.forEach(t => {
+    if (!['内功','轻功','绝技','拳掌','剑法','刀法','长兵','奇门','射术'].includes(t))
+      html += `<option value="${t}" ${skillFilterType===t?'selected':''}>${t}</option>`;
+  });
+  html += `</select>
+    <select onchange="skillFilterLv=this.value;renderContent()" style="padding:4px 8px;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#e0e0e0;font-size:12px">
+      <option value="all" ${skillFilterLv==='all'?'selected':''}>全部品级</option>`;
+  [5,4,3,2,1,0].forEach(lv => {
+    if (availLvs.has(lv)) {
+      const info = ITEM_LV[lv];
+      const label = info ? (info.skillName || info.name) : `Lv${lv}`;
+      html += `<option value="${lv}" ${skillFilterLv===String(lv)?'selected':''}>${label}</option>`;
+    }
+  });
+  html += `</select>
+    <select onchange="skillFilterForce=this.value;renderContent()" style="padding:4px 8px;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#e0e0e0;font-size:12px">
+      <option value="all" ${skillFilterForce==='all'?'selected':''}>全部门派</option>
+      <option value="江湖" ${skillFilterForce==='江湖'?'selected':''}>江湖 (无门派)</option>`;
+  // Collect available forces from hero's skills
+  const availForces = new Set();
+  skills.forEach(sk => { const f = getSkillForce(sk.skillID); if (f !== '江湖') availForces.add(f); });
+  [...availForces].sort().forEach(f => {
+    html += `<option value="${f}" ${skillFilterForce===f?'selected':''}>${f}</option>`;
+  });
+  html += `</select></div>`;
+
+  // Add skill row
+  html += `<div class="tag-add-row">
+    <input id="addSkillSearch" type="text" placeholder="搜索武学名称或ID..." oninput="filterSkillOptions(this.value)" style="width:160px">
+    <select id="addSkillSelect" style="max-width:280px">
+      <option value="">— 选择武学 —</option>`;
+  const existingIds = new Set(skills.map(s => s.skillID));
+  const sortedSkillIds = Object.keys(SKILL_MAP).map(Number).sort((a,b) => a - b);
+  sortedSkillIds.forEach(id => {
+    const d = SKILL_MAP[id];
+    if (!d) return;
+    if (skillFilterType !== 'all' && d[0] !== skillFilterType) return;
+    if (skillFilterLv !== 'all' && d[1] !== parseInt(skillFilterLv)) return;
+    const sf = getSkillForce(id);
+    if (skillFilterForce !== 'all' && sf !== skillFilterForce) return;
+    const owned = existingIds.has(id);
+    const lvInfo = ITEM_LV[d[1]];
+    const lvLabel = lvInfo ? (lvInfo.skillName || lvInfo.name) : '';
+    html += `<option value="${id}" data-name="${d[2]}" ${owned?'disabled':''}>${id}: [${d[0]}] ${lvLabel} ${d[2]}${owned?' (已有)':''}</option>`;
+  });
+  html += `</select>
+    <input id="addSkillLv" type="number" value="1" min="1" max="10" style="width:60px" title="初始等级">
+    <button class="tag-add-btn" onclick="addSkill('${src}')">+ 添加武学</button>
+  </div>`;
+
+  if (!skills.length) {
+    html += '<p style="color:#666;padding:8px">无武学</p></div>';
+    return html;
+  }
+
+  // Determine slot roles
+  const slotRoles = {};
+  if (h.internalSkillSaveRecord >= 0) slotRoles[h.internalSkillSaveRecord] = '内功';
+  if (h.dodgeSkillSaveRecord >= 0) slotRoles[h.dodgeSkillSaveRecord] = '轻功';
+  if (h.uniqueSkillSaveRecord >= 0) slotRoles[h.uniqueSkillSaveRecord] = '绝技';
+  (h.attackSkillSaveRecord || []).forEach((idx, slot) => { if (idx >= 0) slotRoles[idx] = `招式${slot+1}`; });
+
+  // Filter and group
+  const filtered = [];
+  skills.forEach((sk, i) => {
+    const type = getSkillType(sk.skillID);
+    const d = SKILL_MAP[String(sk.skillID)];
+    const skLv = d ? d[1] : -1;
+    if (skillFilterType !== 'all' && type !== skillFilterType) return;
+    if (skillFilterLv !== 'all' && skLv !== parseInt(skillFilterLv)) return;
+    const skForce = getSkillForce(sk.skillID);
+    if (skillFilterForce !== 'all' && skForce !== skillFilterForce) return;
+    filtered.push({sk, i, type, force: skForce});
+  });
+
+  const grouped = {};
+  filtered.forEach(entry => {
+    if (!grouped[entry.type]) grouped[entry.type] = [];
+    grouped[entry.type].push(entry);
+  });
+
+  html += `<div style="font-size:11px;color:#555;margin-bottom:6px">显示 ${filtered.length} / ${skills.length} 个武学</div>`;
+
+  for (const [type, entries] of Object.entries(grouped)) {
+    html += `<div style="margin-top:8px;margin-bottom:4px;font-size:12px;color:#888;border-bottom:1px solid #222;padding-bottom:4px">${type} (${entries.length})</div>`;
+    entries.forEach(({sk, i}) => {
+      const name = getSkillName(sk.skillID);
+      const lvName = getSkillLvName(sk.skillID);
+      const lvColor = getSkillLvColor(sk.skillID);
+      const displayName = name || '未知武学';
+      const isOpen = openSkillIdx === i;
+      const role = slotRoles[i];
+      const sp = `${p}.kungfuSkills[${i}]`;
+      const skForce = getSkillForce(sk.skillID);
+      const skDesc = getSkillDesc(sk.skillID);
+      const forceLabel = skForce !== '江湖' ? skForce : '';
+      const skForceColor = forceLabel ? getForceColor(Object.entries(FORCE_MAP).find(([k,v])=>v===skForce)?.[0] ?? -1) : '';
+
+      html += `<div class="item-row">
+        <div class="item-summary" onclick="toggleSkillEdit(${i})">
+          <span style="color:${lvColor};font-size:11px;min-width:36px">${lvName}</span>
+          <span style="color:${lvColor};flex:1">${displayName}</span>
+          ${forceLabel ? `<span style="font-size:10px;color:${skForceColor}">${forceLabel}</span>` : ''}
+          <span style="font-size:11px;color:#555">#${sk.skillID}</span>
+          ${role ? `<span class="tag tag-leader">${role}</span>` : ''}
+          <span class="skill-equipped ${sk.equiped?'yes':'no'}">${sk.equiped?'装备中':'未装备'}</span>
+          <span style="font-size:12px;color:#e94560">Lv${sk.lv}</span>
+          <button class="item-edit-btn">${isOpen ? '▲ 收起' : '▼ 编辑'}</button>
+          <button class="tag-remove" onclick="event.stopPropagation();removeSkill('${src}',${i})">✕</button>
+        </div>`;
+
+      if (isOpen) {
+        html += `<div class="item-detail open">`;
+        if (skDesc) html += `<div style="font-size:12px;color:#888;margin-bottom:8px;line-height:1.5">${skDesc}</div>`;
+        html += `<div class="field-grid" style="margin-bottom:10px">
+          ${field('等级', 'number', sk.lv, `${sp}.lv`)}
+          ${field('实战经验', 'number', r2(sk.fightExp), `${sp}.fightExp`)}
+          ${field('读书经验', 'number', r2(sk.bookExp), `${sp}.bookExp`)}
+          ${field('装备', 'select', sk.equiped, `${sp}.equiped`, [{v:true,l:'是'},{v:false,l:'否'}])}
+          ${field('装备总加成', 'number', r2(sk.equipUseSpeAddValue), `${sp}.equipUseSpeAddValue`)}
+          ${field('伤害加成', 'number', r2(sk.damageUseSpeAddValue), `${sp}.damageUseSpeAddValue`)}
+          ${field('自身加成', 'number', r2(sk.selfUseSpeAddValue), `${sp}.selfUseSpeAddValue`)}
+          ${field('敌方加成', 'number', r2(sk.enemyUseSpeAddValue), `${sp}.enemyUseSpeAddValue`)}
+        </div>`;
+
+        // skillMaxPracticeExpData — max practice exp & max read exp per book level
+        const expDataArr = h.skillMaxPracticeExpData || [];
+        let expIdx = expDataArr.findIndex(e => e.skillID === sk.skillID);
+        if (expIdx === -1) {
+          expDataArr.push({ skillID: sk.skillID, maxPracticeExp: 0, maxReadExp: [0,0,0,0,0,0] });
+          expIdx = expDataArr.length - 1;
+        }
+        const expEntry = expDataArr[expIdx];
+        const ep = `${p}.skillMaxPracticeExpData[${expIdx}]`;
+        const bookLvNames = ['残本','仿本','善本','古本','珍本','完本'];
+        const bookLvColors = ['#6b7280','#059669','#3b82f6','#7c3aed','#d97706','#dc2626'];
+        html += `<div class="stat-section-title" style="color:#f1c40f">最高修炼/读书经验</div>`;
+        html += `<div class="field-grid" style="margin-bottom:6px">
+          ${field('最高修炼经验', 'number', r2(expEntry.maxPracticeExp), `${ep}.maxPracticeExp`)}
+        </div>`;
+        html += `<div style="font-size:11px;color:#888;margin:4px 0">最高读书经验 (按秘籍品级)</div>`;
+        html += `<div class="field-grid">`;
+        for (let bl = 0; bl < 6; bl++) {
+          const val = (expEntry.maxReadExp && expEntry.maxReadExp[bl]) ? r2(expEntry.maxReadExp[bl]) : 0;
+          html += `<div class="field"><label style="color:${bookLvColors[bl]}">${bookLvNames[bl]}</label><input type="number" value="${val}" onchange="setVal('${ep}.maxReadExp[${bl}]',parseFloat(this.value))"></div>`;
+        }
+        html += `</div>`;
+
+        // speEquipData — passive equip bonuses
+        const equipStats = sk.speEquipData?.heroSpeAddData;
+        if (equipStats && Object.keys(equipStats).length) {
+          html += `<div class="stat-section-title">装备被动 (speEquipData)</div>`;
+          html += renderStatEditor(equipStats, `${sp}.speEquipData.heroSpeAddData`, i, 'skEquip');
+        } else {
+          html += `<div class="stat-section-title">装备被动 (speEquipData)</div>`;
+          html += renderStatEditor({}, `${sp}.speEquipData.heroSpeAddData`, i, 'skEquip');
+        }
+
+        // speUseData — active use bonuses
+        const useStats = sk.speUseData?.heroSpeAddData;
+        html += `<div class="stat-section-title" style="color:#2ecc71">使用效果 (speUseData)</div>`;
+        html += renderStatEditor(useStats || {}, `${sp}.speUseData.heroSpeAddData`, i, 'skUse');
+
+        // extraAddData
+        const extraStats = sk.extraAddData?.heroSpeAddData;
+        if (extraStats && Object.keys(extraStats).length) {
+          html += `<div class="stat-section-title" style="color:#e67e22">额外加成 (extraAddData)</div>`;
+          html += renderStatEditor(extraStats, `${sp}.extraAddData.heroSpeAddData`, i, 'skExtra');
+        }
+
+        html += `</div>`; // close item-detail
+      }
+      html += `</div>`; // close item-row
+    });
+  }
+  html += `</div>`;
+  return html;
+}
+
+function toggleSkillEdit(idx) {
+  openSkillIdx = openSkillIdx === idx ? -1 : idx;
+  renderContent();
+}
+
+function addSkill(src) {
+  const sel = document.getElementById('addSkillSelect');
+  const lvInput = document.getElementById('addSkillLv');
+  const skillID = parseInt(sel.value);
+  if (isNaN(skillID)) { toast('请选择一个武学', true); return; }
+  const lv = parseInt(lvInput.value) || 1;
+  const list = src === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  const h = list[selectedIndex];
+  if (!h) return;
+  if (!h.kungfuSkills) h.kungfuSkills = [];
+  h.kungfuSkills.push({
+    skillID: skillID,
+    lv: lv,
+    fightExp: 0.0,
+    bookExp: 0.0,
+    equiped: false,
+    isNew: true,
+    belongHeroID: h.heroID,
+    speEquipData: { heroSpeAddData: {} },
+    equipUseSpeAddValue: 0.0,
+    speUseData: { heroSpeAddData: {} },
+    damageUseSpeAddValue: 0.0,
+    selfUseSpeAddValue: 0.0,
+    enemyUseSpeAddValue: 0.0,
+    extraAddData: { heroSpeAddData: {} },
+    maxManaChanged: false
+  });
+  const name = getSkillName(skillID) || skillID;
+  toast(`已添加武学: ${name}`);
+  renderContent();
+}
+
+function removeSkill(src, idx) {
+  const list = src === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  const h = list[selectedIndex];
+  if (!h || !h.kungfuSkills) return;
+  const removed = h.kungfuSkills[idx];
+  const name = removed ? (getSkillName(removed.skillID) || removed.skillID) : idx;
+  h.kungfuSkills.splice(idx, 1);
+  // Fix slot references that point to indices
+  if (h.internalSkillSaveRecord === idx) h.internalSkillSaveRecord = -1;
+  else if (h.internalSkillSaveRecord > idx) h.internalSkillSaveRecord--;
+  if (h.dodgeSkillSaveRecord === idx) h.dodgeSkillSaveRecord = -1;
+  else if (h.dodgeSkillSaveRecord > idx) h.dodgeSkillSaveRecord--;
+  if (h.uniqueSkillSaveRecord === idx) h.uniqueSkillSaveRecord = -1;
+  else if (h.uniqueSkillSaveRecord > idx) h.uniqueSkillSaveRecord--;
+  if (h.attackSkillSaveRecord) {
+    h.attackSkillSaveRecord = h.attackSkillSaveRecord.map(v => v === idx ? -1 : (v > idx ? v - 1 : v));
+  }
+  openSkillIdx = -1;
+  toast(`已移除武学: ${name}`);
+  renderContent();
+}
+
+function filterSkillOptions(q) {
+  q = q.toLowerCase();
+  const sel = document.getElementById('addSkillSelect');
+  if (!sel) return;
+  Array.from(sel.options).forEach(opt => {
+    if (!opt.value) return; // skip placeholder
+    const name = (opt.dataset.name || '').toLowerCase();
+    const id = opt.value;
+    opt.style.display = (name.includes(q) || id.includes(q)) ? '' : 'none';
+  });
+}
+
+let openItemIdx = -1;
+let itemSource = 'bag'; // 'bag', 'self', 'govern'
+let itemSortKey = 'none';
+let itemSortAsc = true;
+let itemFilterTypes = new Set(); // empty = all
+let itemFilterLvs = new Set();  // empty = all
+let itemFilterRare = new Set(); // empty = all
+
+function toggleItemFilter(set, val) {
+  if (set.has(val)) set.delete(val); else set.add(val);
+  openItemIdx = -1;
+  renderContent();
+}
+function clearItemFilters() {
+  itemFilterTypes.clear();
+  itemFilterLvs.clear();
+  itemFilterRare.clear();
+  openItemIdx = -1;
+  renderContent();
+}
+
+function renderHeroItems(h, src) {
+  const p = heroPath(src);
+  const isPlayerHero = h.heroID === 0;
+
+  // Source tabs
+  let html = `<div class="sub-tabs" style="margin-bottom:8px">
+    <div class="sub-tab${itemSource==='bag'?' active':''}" onclick="itemSource='bag';openItemIdx=-1;renderContent()">背包</div>`;
+  if (isPlayerHero && h.selfStorage) {
+    html += `<div class="sub-tab${itemSource==='self'?' active':''}" onclick="itemSource='self';openItemIdx=-1;renderContent()">个人仓库</div>`;
+  }
+  if (isPlayerHero && saveData.save?.governStorage) {
+    html += `<div class="sub-tab${itemSource==='govern'?' active':''}" onclick="itemSource='govern';openItemIdx=-1;renderContent()">官府仓库</div>`;
+  }
+  html += `</div>`;
+
+  // Determine items and path based on source
+  let items, basePath, money;
+  if (itemSource === 'self' && isPlayerHero && h.selfStorage) {
+    items = h.selfStorage.allItem || [];
+    basePath = `${p}.selfStorage`;
+    money = h.selfStorage.money || 0;
+  } else if (itemSource === 'govern' && isPlayerHero && saveData.save?.governStorage) {
+    items = saveData.save.governStorage.allItem || [];
+    basePath = `saveData.save.governStorage`;
+    money = saveData.save.governStorage.money || 0;
+  } else {
+    items = h.itemListData?.allItem || [];
+    basePath = `${p}.itemListData`;
+    money = h.itemListData?.money || 0;
+    itemSource = 'bag';
+  }
+
+  const sourceLabel = itemSource === 'self' ? '个人仓库' : itemSource === 'govern' ? '官府仓库' : '背包';
+
+  // Sort & filter controls
+  html += `<div class="card"><div class="card-title">${sourceLabel} — 银两: <input type="number" value="${money}" style="width:100px;padding:3px 6px;background:#1a1a2e;border:1px solid #333;color:#e94560;border-radius:3px" onchange="setVal('${basePath}.money',parseInt(this.value))"> — 物品 ${items.length} 件</div>`;
+
+  html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center">
+    <span style="font-size:11px;color:#666">类型:</span>`;
+  Object.entries(ITEM_TYPES).forEach(([k,v]) => {
+    const active = itemFilterTypes.has(k);
+    html += `<span class="sub-tab${active?' active':''}" style="padding:2px 10px;font-size:11px;cursor:pointer" onclick="toggleItemFilter(itemFilterTypes,'${k}')">${v}</span>`;
+  });
+  html += `</div>`;
+
+  html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center">
+    <span style="font-size:11px;color:#666">等級:</span>`;
+  [5,4,3,2,1,0].forEach(lv => {
+    const info = ITEM_LV[lv];
+    if (!info) return;
+    const label = info.itemName || info.name;
+    const active = itemFilterLvs.has(String(lv));
+    html += `<span class="sub-tab${active?' active':''}" style="padding:2px 10px;font-size:11px;cursor:pointer;${active?'':'color:'+info.color}" onclick="toggleItemFilter(itemFilterLvs,'${lv}')">${label}</span>`;
+  });
+  html += `</div>`;
+
+  html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center">
+    <span style="font-size:11px;color:#666">品級:</span>`;
+  [5,4,3,2,1,0].forEach(rv => {
+    const info = RARE_LV_COLORS[rv] ? {name: RARE_LV_BY_TYPE[0]?.[rv] || `品${rv}`, color: RARE_LV_COLORS[rv]} : null;
+    if (!info) return;
+    const active = itemFilterRare.has(String(rv));
+    html += `<span class="sub-tab${active?' active':''}" style="padding:2px 10px;font-size:11px;cursor:pointer;${active?'':'color:'+info.color}" onclick="toggleItemFilter(itemFilterRare,'${rv}')">${info.name}</span>`;
+  });
+  html += `</div>`;
+
+  html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center">
+    <span style="font-size:11px;color:#666">排序:</span>
+    <select onchange="setItemSort(this.value);renderContent()" style="padding:3px 8px;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#e0e0e0;font-size:12px">
+      <option value="none" ${itemSortKey==='none'?'selected':''}>默认</option>
+      <option value="type" ${itemSortKey==='type'?'selected':''}>类型</option>
+      <option value="itemLv" ${itemSortKey==='itemLv'?'selected':''}>品级</option>
+      <option value="value" ${itemSortKey==='value'?'selected':''}>价值</option>
+      <option value="rareLv" ${itemSortKey==='rareLv'?'selected':''}>稀有度</option>
+    </select>
+    <button onclick="itemSortAsc=!itemSortAsc;renderContent()" class="item-edit-btn">${itemSortAsc?'↑ 升序':'↓ 降序'}</button>
+    ${(itemFilterTypes.size||itemFilterLvs.size||itemFilterRare.size)?`<button onclick="clearItemFilters()" class="tag-remove">清除筛选</button>`:''}
+  </div>`;
+
+  if (!items.length) { html += '<p style="color:#666">无物品</p></div>'; return html; }
+
+  // Build indexed list, filter, sort
+  let indexed = items.map((it, i) => ({it, i}));
+  if (itemFilterTypes.size) indexed = indexed.filter(({it}) => itemFilterTypes.has(String(it.type)));
+  if (itemFilterLvs.size) indexed = indexed.filter(({it}) => itemFilterLvs.has(String(it.itemLv)));
+  if (itemFilterRare.size) indexed = indexed.filter(({it}) => itemFilterRare.has(String(it.rareLv)));
+  if (itemSortKey !== 'none') {
+    indexed.sort((a, b) => {
+      const va = a.it[itemSortKey] || 0, vb = b.it[itemSortKey] || 0;
+      return itemSortAsc ? va - vb : vb - va;
+    });
+  }
+
+  html += `<div style="font-size:11px;color:#555;margin-bottom:6px">显示 ${indexed.length} / ${items.length} 件</div>`;
+
+  indexed.forEach(({it, i}) => {
+    html += renderItemRow(it, i, `${basePath}.allItem`);
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+function renderItemRow(it, i, arrayPath) {
+  const typeName = ITEM_TYPES[it.type] || it.type;
+  const rarityName = getRarityName(it.type, it.rareLv);
+  const rarityColor = getRarityColor(it.rareLv);
+  const isOpen = openItemIdx === i;
+  const ip = `${arrayPath}[${i}]`;
+  const lvColor = getItemLvColor(it.itemLv);
+  const lvName = getItemLvName(it.itemLv);
+
+  let html = `<div class="item-row">
+    <div class="item-summary" onclick="toggleItemEdit(${i})">
+      <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${rarityColor};flex-shrink:0" title="${rarityName}"></span>
+      <span class="item-name" style="color:${lvColor}">${it.name}</span>
+      <span style="font-size:11px;color:#888">${typeName}</span>
+      <span style="font-size:11px;color:${rarityColor}">${rarityName}</span>
+      <span style="font-size:11px;color:${lvColor}">${lvName}</span>
+      ${it.equipmentData?.equiped ? '<span class="tag tag-leader">装备中</span>' : ''}
+      <button class="item-edit-btn">${isOpen ? '▲ 收起' : '▼ 编辑'}</button>
+    </div>`;
+
+  if (isOpen) {
+    html += `<div class="item-detail open">`;
+    html += `<div class="field-grid" style="margin-bottom:10px">
+      ${field('名称','text',it.name,`${ip}.name`)}
+      ${field('等级','number',it.itemLv,`${ip}.itemLv`)}
+      ${field('品质(0-5)','number',it.rareLv,`${ip}.rareLv`)}
+      ${field('价值','number',it.value,`${ip}.value`)}
+      ${field('重量','number',r2(it.weight),`${ip}.weight`)}
+      ${field('毒素','number',r2(it.poisonNum),`${ip}.poisonNum`)}
+    </div>`;
+
+    if (it.equipmentData) {
+      const ed = it.equipmentData;
+      html += `<div class="field-grid" style="margin-bottom:10px">
+        ${field('强化等级','number',ed.enhanceLv,`${ip}.equipmentData.enhanceLv`)}
+        ${field('特殊强化','number',ed.speEnhanceLv,`${ip}.equipmentData.speEnhanceLv`)}
+        ${field('重量等级','number',ed.speWeightLv,`${ip}.equipmentData.speWeightLv`)}
+      </div>`;
+      html += `<div class="stat-section-title">基础属性 (黑字)</div>`;
+      html += renderStatEditor(ed.baseAddData?.heroSpeAddData, `${ip}.equipmentData.baseAddData.heroSpeAddData`, i, 'base');
+      html += `<div class="stat-section-title" style="color:#2ecc71">词条属性 (绿字)</div>`;
+      html += renderStatEditor(ed.extraAddData?.heroSpeAddData, `${ip}.equipmentData.extraAddData.heroSpeAddData`, i, 'extra');
+      if (ed.equipPoisonData && ed.equipPoisonData.poisonNum > 0) {
+        html += `<div class="stat-section-title" style="color:#9b59b6">淬毒属性</div>`;
+        html += `<div class="field-grid" style="margin-bottom:6px">
+          ${field('毒素量','number',r2(ed.equipPoisonData.poisonNum),`${ip}.equipmentData.equipPoisonData.poisonNum`)}
+        </div>`;
+        html += renderStatEditor(ed.equipPoisonData?.poisonBuffData?.heroSpeAddData, `${ip}.equipmentData.equipPoisonData.poisonBuffData.heroSpeAddData`, i, 'poison');
+      }
+    }
+
+    if (it.medFoodData) {
+      const mf = it.medFoodData;
+      html += `<div class="stat-section-title">药食效果</div>`;
+      html += `<div class="field-grid" style="margin-bottom:6px">`;
+      if (mf.changeHeroState) {
+        const s = mf.changeHeroState;
+        if (s.hp) html += field('回复生命','number',r2(s.hp),`${ip}.medFoodData.changeHeroState.hp`);
+        if (s.mana) html += field('回复内力','number',r2(s.mana),`${ip}.medFoodData.changeHeroState.mana`);
+        if (s.power) html += field('回复体力','number',r2(s.power),`${ip}.medFoodData.changeHeroState.power`);
+        if (s.externalInjury) html += field('外伤治疗','number',r2(s.externalInjury),`${ip}.medFoodData.changeHeroState.externalInjury`);
+        if (s.internalInjury) html += field('内伤治疗','number',r2(s.internalInjury),`${ip}.medFoodData.changeHeroState.internalInjury`);
+        if (s.poisonInjury) html += field('解毒','number',r2(s.poisonInjury),`${ip}.medFoodData.changeHeroState.poisonInjury`);
+      }
+      html += `</div>`;
+    }
+
+    if (it.horseData) {
+      const hd = it.horseData;
+      html += `<div class="stat-section-title">坐骑属性</div>`;
+      html += `<div class="field-grid">
+        ${field('速度','number',r2(hd.speed),`${ip}.horseData.speed`)}
+        ${field('力量','number',r2(hd.power),`${ip}.horseData.power`)}
+        ${field('冲刺','number',r2(hd.sprint),`${ip}.horseData.sprint`)}
+        ${field('抗性','number',r2(hd.resist),`${ip}.horseData.resist`)}
+      </div>`;
+    }
+
+    html += `</div>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+function setItemSort(key) {
+  if (itemSortKey === key) { itemSortAsc = !itemSortAsc; }
+  else { itemSortKey = key; itemSortAsc = key === 'none'; }
+  openItemIdx = -1;
+}
+
+function renderStatEditor(statObj, path, itemIdx, section) {
+  const entries = statObj ? Object.entries(statObj) : [];
+  let html = '';
+
+  entries.forEach(([key, val]) => {
+    const statName = EQUIP_STAT_NAMES[key] || `未知(${key})`;
+    const isPercent = statName.includes('%');
+    const colorClass = section === 'extra' ? 'extra-stat' : section === 'poison' ? 'extra-stat' : 'base-stat';
+    html += `<div class="stat-entry">
+      <select onchange="renameStatKey('${path}','${key}',this.value,${itemIdx},'${section}')" class="${colorClass}">
+        ${buildStatOptions(key)}
+      </select>
+      <input type="number" step="any" value="${val}" class="${colorClass}"
+        onchange="setVal('${path}[\\'${key}\\']',parseFloat(this.value))">
+      <span style="font-size:11px;color:#666">${isPercent && Math.abs(val) < 1 ? (r2(val*100))+'%' : ''}</span>
+      <button class="stat-remove" onclick="removeStat('${path}','${key}',${itemIdx},'${section}')">✕</button>
+    </div>`;
+  });
+
+  html += `<button class="stat-add-btn" onclick="addStat('${path}',${itemIdx},'${section}')">+ 添加属性</button>`;
+  return html;
+}
+
+function buildStatOptions(selectedKey) {
+  let html = '';
+  const sortedIds = Object.keys(EQUIP_STAT_NAMES).map(Number).sort((a,b) => a - b);
+  sortedIds.forEach(id => {
+    html += `<option value="${id}" ${String(id)===String(selectedKey)?'selected':''}>${id}: ${EQUIP_STAT_NAMES[id]}</option>`;
+  });
+  return html;
+}
+
+function toggleItemEdit(idx) {
+  openItemIdx = openItemIdx === idx ? -1 : idx;
+  renderContent();
+}
+
+function addStat(path, itemIdx, section) {
+  try {
+    const obj = new Function('saveData', 'return ' + path)(saveData);
+    // Find first unused stat ID
+    const usedKeys = Object.keys(obj || {});
+    let newKey = '0';
+    for (let i = 0; i <= 214; i++) {
+      if (!usedKeys.includes(String(i))) { newKey = String(i); break; }
+    }
+    new Function('saveData', path + '["' + newKey + '"] = 0;')(saveData);
+    renderContent();
+  } catch(e) { console.error('addStat error:', e); }
+}
+
+function removeStat(path, key, itemIdx, section) {
+  try {
+    new Function('saveData', 'delete ' + path + '["' + key + '"]')(saveData);
+    renderContent();
+  } catch(e) { console.error('removeStat error:', e); }
+}
+
+function renameStatKey(path, oldKey, newKey, itemIdx, section) {
+  if (oldKey === newKey) return;
+  try {
+    const obj = new Function('saveData', 'return ' + path)(saveData);
+    if (!obj) return;
+    const val = obj[oldKey];
+    delete obj[oldKey];
+    obj[newKey] = val;
+    renderContent();
+  } catch(e) { console.error('renameStatKey error:', e); }
+}
+
+function resolveHeroName(id) {
+  if (id == null || id < 0) return null;
+  const h = saveData.heroes.find(x => x && x.heroID === id)
+         || saveData.tempHeroes.find(x => x && x.heroID === id);
+  return h ? h.heroName : null;
+}
+
+function heroLink(id) {
+  const name = resolveHeroName(id);
+  if (name) return `<span style="color:#e0e0e0">${name}</span><span style="color:#666;font-size:11px"> (${id})</span>`;
+  return `<span style="color:#666">${id}</span>`;
+}
+
+function renderHeroRelations(h, src) {
+  const p = heroPath(src);
+
+  // Favor (好感度)
+  const favorVal = h.favor;
+  const isPlayer = favorVal === -999999 || h.heroID === 0;
+  const favorLabel = isPlayer ? '(玩家自身)' : (h.haveMeet === false ? '(未见面)' : '');
+  const favorColor = isPlayer ? '#666' : (favorVal >= 50 ? '#2ecc71' : favorVal >= 0 ? '#e0e0e0' : '#e74c3c');
+
+  let html = `<div class="card"><div class="card-title">好感度</div>
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <span style="color:#888;font-size:13px">对玩家好感:</span>
+      <input type="number" step="any" value="${favorVal}" style="width:100px;padding:4px 8px;background:#1a1a2e;border:1px solid #333;color:${favorColor};border-radius:4px;font-size:14px"
+        onchange="setVal('${p}.favor',parseFloat(this.value)||0);renderContent()">
+      <span style="font-size:12px;color:#666">${favorLabel}</span>
+      <span style="font-size:11px;color:#555">(-999999=未见面/自身)</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="color:#888;font-size:13px">已见面:</span>
+      <select onchange="setVal('${p}.haveMeet',this.value==='true');renderContent()"
+        style="padding:3px 8px;background:#1a1a2e;border:1px solid #333;color:#e0e0e0;border-radius:4px;font-size:13px">
+        <option value="true" ${h.haveMeet?'selected':''}>是</option>
+        <option value="false" ${!h.haveMeet?'selected':''}>否</option>
+      </select>
+    </div>
+  </div>`;
+
+  // Singular relations (Teacher, Lover)
+  html += `<div class="card"><div class="card-title">人际关系</div>`;
+
+  const singulars = [
+    {key:'Teacher',label:'师傅'},{key:'Lover',label:'夫妻'}
+  ];
+  singulars.forEach(r => {
+    const val = h[r.key];
+    const display = val >= 0 ? heroLink(val) : '<span style="color:#666">无</span>';
+    // Get the target hero's favor toward this hero
+    const targetHero = findHeroById(val);
+    const targetFavor = targetHero ? r2(targetHero.favor) : '';
+    html += `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #222">
+      <span style="width:60px;color:#888;font-size:13px">${r.label}</span>
+      <span style="flex:1">${display}</span>
+      <input type="number" value="${val}" style="width:70px" title="英雄ID"
+        onchange="setSingularRelation('${src}','${r.key}',parseInt(this.value))">
+      <button class="tag-remove" onclick="setSingularRelation('${src}','${r.key}',-1)">✕</button>
+    </div>`;
+  });
+
+  // Array relations (Students, Friends, Brothers, Haters, Relatives, PreLovers)
+  const rels = [
+    {key:'Students',label:'徒弟'},{key:'Brothers',label:'结义'},
+    {key:'PreLovers',label:'情侣'},{key:'Friends',label:'朋友'},
+    {key:'Haters',label:'仇敌'}
+  ];
+
+  rels.forEach(r => {
+    const arr = h[r.key] || [];
+    html += `<div style="margin-top:10px;padding-top:8px;border-top:1px solid #222">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span style="font-size:13px;color:#888">${r.label} (${arr.length})</span>
+        <input type="number" id="addRel_${r.key}" placeholder="英雄ID" style="width:70px;padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px">
+        <button class="stat-add-btn" onclick="addRelation('${src}','${r.key}')">+</button>
+      </div>`;
+    if (arr.length) {
+      arr.forEach((id, idx) => {
+        const targetHero = findHeroById(id);
+        const targetFavor = targetHero ? targetHero.favor : null;
+        const favorDisplay = targetFavor != null && targetFavor !== -999999 ? r2(targetFavor) : '';
+        const fColor = targetFavor >= 50 ? '#2ecc71' : targetFavor >= 0 ? '#e0e0e0' : '#e74c3c';
+        html += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0">
+          <span style="flex:1;font-size:13px">${heroLink(id)}</span>`;
+        if (targetHero && targetFavor !== -999999) {
+          html += `<span style="font-size:11px;color:#666">好感:</span>
+            <input type="number" step="any" value="${favorDisplay}" style="width:65px;color:${fColor}"
+              onchange="setHeroFavor(${id},parseFloat(this.value)||0);renderContent()">`;
+        }
+        html += `<select onchange="moveRelation('${src}','${r.key}',${idx},this.value);renderContent()"
+            style="padding:2px 4px;background:#1a1a2e;border:1px solid #333;color:#aaa;border-radius:3px;font-size:11px">
+            <option value="">移至...</option>
+            ${rels.filter(x=>x.key!==r.key).map(x=>`<option value="${x.key}">${x.label}</option>`).join('')}
+          </select>
+          <button class="tag-remove" onclick="removeRelation('${src}','${r.key}',${idx})">✕</button>
+        </div>`;
+      });
+    }
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+  return html;
+}
+
+function findHeroById(id) {
+  if (id == null || id < 0) return null;
+  return saveData.heroes.find(x => x && x.heroID === id)
+      || saveData.tempHeroes.find(x => x && x.heroID === id);
+}
+
+// Relationship mirror mapping: when A has relation X with B, B should have relation Y with A
+const REL_MIRROR = {
+  Teacher: 'Students', Students: 'Teacher',
+  Lover: 'Lover',
+  Friends: 'Friends', Brothers: 'Brothers', Haters: 'Haters',
+  Relatives: 'Relatives', PreLovers: 'PreLovers'
+};
+
+function addRelMirror(heroId, targetId, key) {
+  const mirrorKey = REL_MIRROR[key];
+  if (!mirrorKey) return;
+  const target = findHeroById(targetId);
+  if (!target) return;
+  if (mirrorKey === 'Teacher') {
+    // singular: set Teacher = heroId
+    if (target.Teacher < 0 || target.Teacher === undefined) target.Teacher = heroId;
+  } else if (mirrorKey === 'Lover') {
+    if (target.Lover < 0 || target.Lover === undefined) target.Lover = heroId;
+  } else {
+    if (!target[mirrorKey]) target[mirrorKey] = [];
+    if (!target[mirrorKey].includes(heroId)) target[mirrorKey].push(heroId);
+  }
+}
+
+function removeRelMirror(heroId, targetId, key) {
+  const mirrorKey = REL_MIRROR[key];
+  if (!mirrorKey) return;
+  const target = findHeroById(targetId);
+  if (!target) return;
+  if (mirrorKey === 'Teacher') {
+    if (target.Teacher === heroId) target.Teacher = -1;
+  } else if (mirrorKey === 'Lover') {
+    if (target.Lover === heroId) target.Lover = -1;
+  } else {
+    if (target[mirrorKey]) {
+      const idx = target[mirrorKey].indexOf(heroId);
+      if (idx >= 0) target[mirrorKey].splice(idx, 1);
+    }
+  }
+}
+
+function setHeroFavor(heroId, value) {
+  const h = findHeroById(heroId);
+  if (h) h.favor = value;
+}
+
+function setSingularRelation(src, key, newId) {
+  const list = src === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  const h = list[selectedIndex];
+  if (!h) return;
+  const oldId = h[key];
+  // Remove mirror from old target
+  if (oldId >= 0) removeRelMirror(h.heroID, oldId, key);
+  h[key] = newId;
+  // Add mirror to new target
+  if (newId >= 0) addRelMirror(h.heroID, newId, key);
+  renderContent();
+}
+
+function addRelation(src, key) {
+  const input = document.getElementById('addRel_' + key);
+  const id = parseInt(input?.value);
+  if (isNaN(id) || id < 0) { toast('请输入有效英雄ID', true); return; }
+  const list = src === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  const h = list[selectedIndex];
+  if (!h) return;
+  if (!h[key]) h[key] = [];
+  if (h[key].includes(id)) { toast('已存在该关系', true); return; }
+  h[key].push(id);
+  addRelMirror(h.heroID, id, key);
+  toast(`已添加${resolveHeroName(id)||id}为${key}（双向同步）`);
+  renderContent();
+}
+
+function removeRelation(src, key, idx) {
+  const list = src === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  const h = list[selectedIndex];
+  if (!h || !h[key]) return;
+  const removed = h[key].splice(idx, 1)[0];
+  removeRelMirror(h.heroID, removed, key);
+  toast(`已移除: ${resolveHeroName(removed)||removed}（双向同步）`);
+  renderContent();
+}
+
+function moveRelation(src, fromKey, idx, toKey) {
+  if (!toKey) return;
+  const list = src === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  const h = list[selectedIndex];
+  if (!h || !h[fromKey]) return;
+  const id = h[fromKey].splice(idx, 1)[0];
+  removeRelMirror(h.heroID, id, fromKey);
+  if (!h[toKey]) h[toKey] = [];
+  if (!h[toKey].includes(id)) h[toKey].push(id);
+  addRelMirror(h.heroID, id, toKey);
+  toast(`已将${resolveHeroName(id)||id}从${fromKey}移至${toKey}（双向同步）`);
+  renderContent();
+}
+
+// ===== WORLD RENDER =====
+function renderArea(c) {
+  const areas = saveData.save?.Areas || [];
+  if (!areas.length) { c.innerHTML = '<div class="empty"><p>无地区数据</p></div>'; return; }
+  const a = areas[selectedIndex];
+  if (!a) return;
+
+  const aType = getAreaType(a.areaID);
+  const typeName = aType === 0 ? '城镇' : aType === 1 ? '村庄' : '门派';
+  const ap = `saveData.save.Areas[${selectedIndex}]`;
+
+  const subTabs = [{id:'area',label:'地区信息'},{id:'buildings',label:'建筑'},{id:'missions',label:'悬赏'}];
+  let html = `<div class="sub-tabs">${subTabs.map(t =>
+    `<div class="sub-tab${heroSubTab===t.id?' active':''}" onclick="heroSubTab='${t.id}';renderContent()">${t.label}</div>`
+  ).join('')}</div>`;
+
+  if (heroSubTab === 'area') {
+    html += `<div class="card"><div class="card-title">${a.areaName} <span class="tag tag-${aType===0?'city':aType===1?'village':'sect'}">${typeName}</span></div>
+      <div class="field-grid">
+        ${field('名称', 'text', a.areaName, `${ap}.areaName`)}
+        ${fieldSelect('所属势力', a.belongForceID, `${ap}.belongForceID`, Object.entries(FORCE_MAP).map(([k,v])=>({v:parseInt(k),l:v})))}
+        ${field('起始等级', 'number', a.areaStartLv, `${ap}.areaStartLv`)}
+      </div>
+    </div>
+    <div class="card"><div class="card-title">地区状态</div>
+      <div class="field-grid">
+        ${field('人口', 'number', r2(a.people), `${ap}.people`)}
+        ${field('人口上限', 'number', r2(a.maxPeople), `${ap}.maxPeople`)}
+        ${field('治安', 'number', r2(a.safe), `${ap}.safe`)}
+        ${field('民心', 'number', r2(a.support), `${ap}.support`)}
+        ${field('防御', 'number', r2(a.defence), `${ap}.defence`)}
+        ${field('特产', 'text', a.speProduct || '', `${ap}.speProduct`)}
+      </div>
+    </div>
+    <div class="card"><div class="card-title">驻守人物</div>`;
+    const insideHeros = a.insideHeros || [];
+    if (insideHeros.length) {
+      html += `<div style="display:flex;flex-wrap:wrap;gap:6px">${insideHeros.map(id =>
+        `<span style="background:#1a1a2e;padding:3px 8px;border-radius:4px;font-size:13px;border:1px solid #333">${heroLink(id)}</span>`
+      ).join('')}</div>`;
+    } else html += '<p style="color:#666">无驻守人物</p>';
+    html += `</div>`;
+
+    html += `<div class="card"><div class="card-title">相邻地区</div><p style="font-size:13px;color:#aaa">`;
+    (a.connectAreaID||[]).forEach(id => {
+      const ca = areas.find(x => x.areaID === id);
+      html += `<span style="color:#e0e0e0;margin-right:10px">${ca?ca.areaName:'?'}(${id})</span>`;
+    });
+    html += `</p></div>`;
+
+    // Resources
+    const GD = (typeof GameData !== 'undefined') ? GameData : {};
+    const resNames = GD.RESOURCE_NAMES || ['银两','粮食','木料','矿石','药材','威望'];
+    const resColors = ['#f1c40f','#2ecc71','#8B4513','#95a5a6','#9b59b6','#e94560'];
+    const res = a.changeResource || [0,0,0,0,0,0];
+    const resRate = a.resourceValueRateBase || [0,0,0,0,0,0];
+    const isSect = aType === 2;
+
+    html += `<div class="card"><div class="card-title">资源产出</div>
+      <div class="field-grid">`;
+    for (let ri = 0; ri < 6; ri++) {
+      html += `<div class="field"><label style="color:${resColors[ri]}">${resNames[ri]}</label>
+        <input type="number" step="any" value="${r2(res[ri])}" onchange="setVal('${ap}.changeResource[${ri}]',parseFloat(this.value)||0)"></div>`;
+    }
+    html += `</div></div>`;
+
+    html += `<div class="card"><div class="card-title">产出率</div>
+      <div class="field-grid">`;
+    for (let ri = 0; ri < 6; ri++) {
+      html += `<div class="field"><label style="color:${resColors[ri]}">${resNames[ri]}</label>
+        <input type="number" step="any" value="${r2(resRate[ri])}" onchange="setVal('${ap}.resourceValueRateBase[${ri}]',parseFloat(this.value)||0)"></div>`;
+    }
+    html += `</div></div>`;
+
+    // Force resources (門派 only)
+    if (isSect) {
+      const forces = saveData.save?.Forces || [];
+      const forceIdx = forces.findIndex(f => f.mainAreaID === a.areaID || (f.ownAreasID && f.ownAreasID.includes(a.areaID) && f.forceID === a.belongForceID));
+      const fi = forceIdx >= 0 ? forceIdx : forces.findIndex(f => f.forceID === a.belongForceID);
+      if (fi >= 0) {
+        const f = forces[fi];
+        const fp = `saveData.save.Forces[${fi}]`;
+        const store = f.resourceStore || [0,0,0,0,0,0];
+        const storeMax = f.resourceStoreMax || [0,0,0,0,0,0];
+        const change = f.resourceChange || [0,0,0,0,0,0];
+
+        html += `<div class="card"><div class="card-title">门派资源 — ${f.forceName}</div>
+          <div class="field-grid" style="margin-bottom:8px">
+            ${field('门派等级', 'number', f.forceLv, `${fp}.forceLv`)}
+            ${field('总人口', 'number', f.totalPopulation, `${fp}.totalPopulation`)}
+            ${field('总薪俸', 'number', f.totalSalary, `${fp}.totalSalary`)}
+          </div>
+          <div style="font-size:12px;color:#888;margin:8px 0 4px">资源储量 / 上限 / 每月变化</div>
+          <table class="item-table"><thead><tr>
+            <th>资源</th><th>储量</th><th>上限</th><th>变化</th>
+          </tr></thead><tbody>`;
+        for (let ri = 0; ri < 6; ri++) {
+          html += `<tr>
+            <td style="color:${resColors[ri]}">${resNames[ri]}</td>
+            <td><input type="number" step="any" value="${r2(store[ri])}" style="width:80px" onchange="setVal('${fp}.resourceStore[${ri}]',parseFloat(this.value)||0)"></td>
+            <td><input type="number" step="any" value="${r2(storeMax[ri])}" style="width:80px" onchange="setVal('${fp}.resourceStoreMax[${ri}]',parseFloat(this.value)||0)"></td>
+            <td style="color:${change[ri]>=0?'#2ecc71':'#e74c3c'}">${change[ri]>=0?'+':''}${r2(change[ri])}</td>
+          </tr>`;
+        }
+        html += `</tbody></table></div>`;
+      }
+    }
+  } else if (heroSubTab === 'buildings') {
+    html += renderAreaBuildings(a, ap);
+  } else if (heroSubTab === 'missions') {
+    html += renderAreaMissions(a);
+  }
+
+  c.innerHTML = html;
+}
+
+function renderAreaBuildings(a, ap) {
+  const tiles = a.areaTiles || [];
+  const w = a.mapWidth || 13;
+  const h = a.mapHeight || 13;
+  const GD = (typeof GameData !== 'undefined') ? GameData : {};
+  const BNAME = GD.BUILDING_ID_TO_NAME || {};
+  const BICON = GD.BUILDING_ICONS || {};
+  const BCAT = GD.SECT_BUILDING_CATEGORIES || {};
+  const specialBldId = (GD.SECT_SPECIAL_BUILDING || {})[a.belongForceID];
+
+  const allBuildings = [];
+  const allRoads = [];
+  tiles.forEach((t, idx) => {
+    if (t.building && t.building.buildingID !== undefined && t.building.buildingID >= 0) {
+      allBuildings.push({ tile: t, idx, row: t.row, col: t.column, b: t.building });
+    }
+    if ((t.tileType === 1 || t.tileType === 2) && t.areaRoadData) {
+      allRoads.push(idx);
+    }
+  });
+
+  // Batch controls
+  let html = `<div class="card"><div class="card-title">门派地图 — ${a.areaName} (${w}×${h})</div>`;
+  html += `<div class="batch-bar">
+    <span style="color:#888;font-size:12px">批量操作:</span>
+    <button onclick="batchSetBuildingLv('${ap}', ${JSON.stringify(allBuildings.map(b=>b.idx))}, 10)">全部建筑满级</button>
+    <button onclick="batchSetRoadLv('${ap}', ${JSON.stringify(allRoads)}, 10)">全部道路满级</button>
+    <button onclick="batchSetBuildingLv('${ap}', ${JSON.stringify(allBuildings.map(b=>b.idx))}, 10);batchSetRoadLv('${ap}', ${JSON.stringify(allRoads)}, 10)">全部满级</button>
+    <select onchange="if(this.value) { batchSetBuildingLv('${ap}', ${JSON.stringify(allBuildings.map(b=>b.idx))}, parseInt(this.value)); this.value=''; }">
+      <option value="">设置建筑等级...</option>
+      <option value="1">等级 1</option><option value="2">等级 2</option><option value="3">等级 3</option>
+      <option value="4">等级 4</option><option value="5">等级 5</option><option value="6">等级 6</option>
+      <option value="7">等级 7</option><option value="8">等级 8</option><option value="9">等级 9</option><option value="10">等级 10</option>
+    </select>
+  </div>`;
+
+  // Grid map
+  html += `<div class="sect-map-wrap">`;
+  html += `<div class="sect-map-grid-wrap">`;
+  html += `<div class="sect-map-grid" style="grid-template-columns:repeat(${w}, 42px);">`;
+
+  for (let r = h - 1; r >= 0; r--) {
+    for (let c = 0; c < w; c++) {
+      const tIdx = r * w + c;
+      const t = tiles[tIdx];
+      if (!t) { html += `<div class="sect-map-cell cell-outside"></div>`; continue; }
+
+      const tt = t.tileType;
+      const b = (t.building && t.building.buildingID >= 0) ? t.building : null;
+      const emptySlot = (t.building && t.building.buildingID === -1) ? t.building : null;
+      const isWhite = (t.spriteName === 'Tile_WhiteGround');
+      const isGray = (t.spriteName === 'Tile_GrayGround');
+
+      let cls = 'sect-map-cell';
+      if (tt === -3) { cls += ' cell-outside'; }
+      else if (tt === -2) { cls += ' cell-wall'; }
+      else if (tt === -1) { cls += isWhite ? ' cell-border-white' : ' cell-border'; }
+      else if (tt === 1) { cls += ' cell-road'; }
+      else if (tt === 2 && b && b.buildingID === 0) { cls += ' cell-ground cell-core'; }
+      else if (tt === 2) { cls += ' cell-gate'; }
+      else if (tt === 0 && !b && !emptySlot) { cls += ' cell-wild'; }
+      else if (tt === 0 && emptySlot && emptySlot.lv === 0) { cls += ' cell-cleared'; }
+      else if (tt === 0 && emptySlot) { cls += isWhite ? ' cell-foundation-w' : ' cell-foundation-g'; }
+      else { cls += isWhite ? ' cell-ground-white' : ' cell-ground'; }
+
+      if (b) {
+        cls += ' has-building';
+        if (b.buildingID === 0) cls += ' cell-core';
+        else if (specialBldId !== undefined && b.buildingID === specialBldId) cls += ' cell-special';
+      }
+
+      const hasRoad = (tt === 1 || tt === 2) && t.areaRoadData;
+      const clickable = b || tt === 0 || hasRoad;
+      const selAttr = clickable ? ` onclick="selectMapBuilding(${tIdx},'${ap}')"` : '';
+      const selCls = (typeof window._selectedMapTile !== 'undefined' && window._selectedMapTile === tIdx) ? ' cell-selected' : '';
+
+      html += `<div class="${cls}${selCls}" data-tidx="${tIdx}"${selAttr}>`;
+      if (b) {
+        const icon = BICON[b.buildingID] || '🏗️';
+        html += `<span class="cell-icon">${icon}</span>`;
+        if (b.lv > 0) html += `<span class="cell-lv">${b.lv}</span>`;
+      } else if (emptySlot) {
+        if (emptySlot.lv > 0) html += `<span class="cell-lv" style="color:#8a8a6a">基${emptySlot.lv}</span>`;
+        else html += `<span style="color:#555;font-size:8px">◇</span>`;
+      } else if (tt === 0) {
+        html += `<span style="color:#3a5a3a;font-size:10px">🌿</span>`;
+      } else if (tt === -2) {
+        html += `<span class="cell-icon">🚪</span>`;
+      } else if (tt === 1 && t.areaRoadData) {
+        const rlv = t.areaRoadData.roadLv || 0;
+        html += `<span style="color:#6a6a3a;font-size:8px">━</span>`;
+        if (rlv > 0) html += `<span class="cell-lv" style="color:#8a7a3a">${rlv}</span>`;
+      } else if (tt === 1) {
+        html += `<span style="color:#6a6a3a;font-size:8px">━</span>`;
+      }
+      html += `</div>`;
+    }
+  }
+  html += `</div>`; // grid
+
+  // Legend
+  html += `<div class="map-legend">
+    <div class="map-legend-item"><div class="map-legend-swatch" style="background:#1a3020"></div>🌿 荒地</div>
+    <div class="map-legend-item"><div class="map-legend-swatch" style="background:#2a2a1a"></div>地基(灰)</div>
+    <div class="map-legend-item"><div class="map-legend-swatch" style="background:#2a2a2e"></div>地基(白)</div>
+    <div class="map-legend-item"><div class="map-legend-swatch" style="background:#1a2744"></div>建筑</div>
+    <div class="map-legend-item"><div class="map-legend-swatch" style="background:#2a2a1a;border-color:#6a6a3a"></div>道路</div>
+    <div class="map-legend-item"><div class="map-legend-swatch" style="background:#2c1a1a"></div>围墙</div>
+    <div class="map-legend-item"><div class="map-legend-swatch" style="background:linear-gradient(135deg,#3a1a2e,#2a1a3e)"></div>正厅</div>
+    <div class="map-legend-item"><div class="map-legend-swatch" style="background:linear-gradient(135deg,#1a2a3e,#1a3a2e)"></div>特殊建筑</div>
+  </div>`;
+  html += `</div>`; // grid-wrap
+
+  // Detail panel
+  html += `<div class="bld-detail" id="bldDetailPanel">`;
+  html += renderBuildingDetail(a, ap, tiles, BNAME, BICON, specialBldId);
+  html += `</div>`;
+
+  html += `</div>`; // sect-map-wrap
+  html += `</div>`; // card
+
+  // Building list table (collapsible)
+  html += `<div class="card">
+    <div class="card-title" style="cursor:pointer" onclick="document.getElementById('bldListBody').style.display=document.getElementById('bldListBody').style.display==='none'?'':'none'">
+      建筑列表 (${allBuildings.length}) <span style="font-size:12px;color:#666">▼ 点击展开</span>
+    </div>
+    <div id="bldListBody" style="display:none" class="bld-list-table">
+      <table class="item-table"><thead><tr>
+        <th>图标</th><th>名称</th><th>位置</th><th>等级</th><th>产出率</th><th>存储率</th>
+      </tr></thead><tbody>`;
+  allBuildings.sort((a,b) => a.b.buildingID - b.b.buildingID).forEach(({b, idx, row, col}) => {
+    const name = BNAME[b.buildingID] || `建筑${b.buildingID}`;
+    const icon = BICON[b.buildingID] || '🏗️';
+    html += `<tr style="cursor:pointer" onclick="selectMapBuilding(${idx},'${ap}')">
+      <td>${icon}</td><td>${name}</td><td>(${row},${col})</td>
+      <td><input type="number" min="0" max="10" value="${b.lv}" style="width:50px"
+        onclick="event.stopPropagation()"
+        onchange="setVal('${ap}.areaTiles[${idx}].building.lv',parseInt(this.value));renderContent()"></td>
+      <td>${r2(b.produceRate)}</td><td>${r2(b.resourceStoreRate)}</td>
+    </tr>`;
+  });
+  html += `</tbody></table></div></div>`;
+
+  return html;
+}
+
+function renderBuildingDetail(a, ap, tiles, BNAME, BICON, specialBldId) {
+  const tIdx = (typeof window._selectedMapTile !== 'undefined') ? window._selectedMapTile : -1;
+  if (tIdx < 0 || !tiles[tIdx]) {
+    return `<div class="card"><div class="card-title">建筑详情</div>
+      <p style="color:#666;font-size:13px">← 点击地图上的格子查看详情</p></div>`;
+  }
+  const t = tiles[tIdx];
+  const b = (t.building && t.building.buildingID >= 0) ? t.building : null;
+  const emptySlot = (t.building && t.building.buildingID === -1) ? t.building : null;
+  const isWhite = (t.spriteName === 'Tile_WhiteGround');
+  const spriteLabel = isWhite ? '白地' : '灰地';
+
+  // === Road tile ===
+  if ((t.tileType === 1 || t.tileType === 2) && t.areaRoadData && !b) {
+    const rd = t.areaRoadData;
+    let html = `<div class="card"><div class="card-title">━ 道路</div>
+      <div style="font-size:13px;color:#aaa;margin-bottom:10px">
+        <span>位置: (${t.row}, ${t.column})</span> ·
+        <span>类型: ${t.tileType === 2 ? '大门' : '道路'}</span>
+      </div>
+      <div style="background:#1a1a2e;border-radius:6px;padding:10px;margin-bottom:10px;border:1px solid #333">
+        <div style="font-size:12px;color:#888;margin-bottom:6px">道路属性</div>
+        <div style="margin-bottom:8px"><label style="font-size:12px;color:#888">道路等级</label>
+          <div class="bld-lv-stars">`;
+    for (let lv = 0; lv <= 10; lv++) {
+      html += `<div class="bld-lv-star${rd.roadLv === lv ? ' active' : ''}"
+        onclick="setVal('${ap}.areaTiles[${tIdx}].areaRoadData.roadLv',${lv});renderContent()"
+        title="等级 ${lv}">${lv}</div>`;
+    }
+    html += `</div></div>
+        <div class="field-grid" style="grid-template-columns:1fr 1fr">
+          ${field('升级剩余', 'number', rd.upgradeTimeLeft, `${ap}.areaTiles[${tIdx}].areaRoadData.upgradeTimeLeft`)}
+        </div>
+      </div>
+    </div>`;
+    return html;
+  }
+
+  // === Empty slot (buildingID=-1, has foundation data) ===
+  if (!b && emptySlot) {
+    const groundType = emptySlot.lv > 0 ? '地基' : '废墟';
+    const groundIcon = emptySlot.lv > 0 ? '🧱' : '◇';
+    let html = `<div class="card"><div class="card-title">${groundIcon} ${groundType}</div>
+      <div style="font-size:13px;color:#aaa;margin-bottom:10px">
+        <span>位置: (${t.row}, ${t.column})</span> ·
+        <span>地面: ${spriteLabel}</span> ·
+        <span>类型: tileType=${t.tileType}</span>
+      </div>
+      <div style="background:#1a1a2e;border-radius:6px;padding:10px;margin-bottom:10px;border:1px solid #333">
+        <div style="font-size:12px;color:#888;margin-bottom:6px">地基属性</div>
+        <div class="field-grid" style="grid-template-columns:1fr 1fr">
+          ${field('地基等级', 'number', emptySlot.lv, `${ap}.areaTiles[${tIdx}].building.lv`)}
+          ${field('产出率', 'number', r2(emptySlot.produceRate), `${ap}.areaTiles[${tIdx}].building.produceRate`)}
+          ${field('存储率', 'number', r2(emptySlot.resourceStoreRate), `${ap}.areaTiles[${tIdx}].building.resourceStoreRate`)}
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <label style="font-size:12px;color:#888">放置建筑:</label>
+        <select style="margin-top:4px;width:100%;padding:5px 8px;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#e0e0e0;font-size:13px"
+          onchange="placeBuilding(${tIdx},'${ap}',parseInt(this.value))">
+          <option value="-1">选择建筑...</option>
+          ${Object.entries(BNAME).map(([id,name]) => `<option value="${id}">${BICON[id]||'🏗️'} ${name}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+    return html;
+  }
+
+  // === Raw wild ground (building=null) ===
+  if (!b && !emptySlot) {
+    return `<div class="card"><div class="card-title">🌿 荒地</div>
+      <div style="font-size:13px;color:#aaa;margin-bottom:10px">
+        <span>位置: (${t.row}, ${t.column})</span> ·
+        <span>地面: ${spriteLabel}</span> ·
+        <span>类型: tileType=${t.tileType}</span>
+      </div>
+      <p style="color:#666;font-size:12px;margin-bottom:10px">未开发的荒地，无地基数据。</p>
+      <div style="margin-top:8px">
+        <label style="font-size:12px;color:#888">放置建筑:</label>
+        <select style="margin-top:4px;width:100%;padding:5px 8px;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#e0e0e0;font-size:13px"
+          onchange="placeBuilding(${tIdx},'${ap}',parseInt(this.value))">
+          <option value="-1">选择建筑...</option>
+          ${Object.entries(BNAME).map(([id,name]) => `<option value="${id}">${BICON[id]||'🏗️'} ${name}</option>`).join('')}
+        </select>
+      </div>
+    </div>`;
+  }
+
+  // === Has a real building ===
+  const name = BNAME[b.buildingID] || `建筑${b.buildingID}`;
+  const icon = BICON[b.buildingID] || '🏗️';
+  const isCore = b.buildingID === 0;
+  const isSpecial = specialBldId !== undefined && b.buildingID === specialBldId;
+
+  let html = `<div class="card">
+    <div class="bld-detail-header">
+      <span class="bld-detail-icon">${icon}</span>
+      <div>
+        <div class="bld-detail-name">${name}${isCore ? ' <span style="font-size:11px;color:#ffd700">★ 核心</span>' : ''}${isSpecial ? ' <span style="font-size:11px;color:#2ecc71">✦ 特殊</span>' : ''}</div>
+        <div class="bld-detail-pos">位置 (${t.row}, ${t.column}) · ID: ${b.buildingID} · ${spriteLabel}</div>
+      </div>
+    </div>`;
+
+  // Level stars
+  html += `<div style="margin-bottom:12px"><label style="font-size:12px;color:#888">建筑等级</label>
+    <div class="bld-lv-stars">`;
+  for (let lv = 0; lv <= 10; lv++) {
+    html += `<div class="bld-lv-star${b.lv === lv ? ' active' : ''}"
+      onclick="setVal('${ap}.areaTiles[${tIdx}].building.lv',${lv});renderContent()"
+      title="等级 ${lv}">${lv}</div>`;
+  }
+  html += `</div></div>`;
+
+  // Editable fields
+  html += `<div class="field-grid" style="grid-template-columns:1fr 1fr">
+    ${field('产出率', 'number', r2(b.produceRate), `${ap}.areaTiles[${tIdx}].building.produceRate`)}
+    ${field('存储率', 'number', r2(b.resourceStoreRate), `${ap}.areaTiles[${tIdx}].building.resourceStoreRate`)}
+    ${field('建造剩余', 'number', b.buildTimeLeft, `${ap}.areaTiles[${tIdx}].building.buildTimeLeft`)}
+    ${field('升级剩余', 'number', b.upgradeTimeLeft, `${ap}.areaTiles[${tIdx}].building.upgradeTimeLeft`)}
+    ${field('拆除剩余', 'number', b.destroyTimeLeft, `${ap}.areaTiles[${tIdx}].building.destroyTimeLeft`)}
+  </div>`;
+
+  // Change building type
+  if (!isCore) {
+    html += `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #333">
+      <label style="font-size:12px;color:#888">更换建筑类型</label>
+      <select style="margin-top:4px;width:100%;padding:5px 8px;background:#1a1a2e;border:1px solid #333;border-radius:4px;color:#e0e0e0;font-size:13px"
+        onchange="changeBuildingType(${tIdx},'${ap}',parseInt(this.value))">
+        ${Object.entries(BNAME).map(([id,n]) => `<option value="${id}"${parseInt(id)===b.buildingID?' selected':''}>${BICON[id]||'🏗️'} ${n}</option>`).join('')}
+      </select>
+    </div>`;
+  }
+
+  // Remove building
+  if (!isCore) {
+    html += `<div style="margin-top:12px">
+      <button style="padding:5px 14px;background:#5a1a1a;border:1px solid #8a2a2a;border-radius:4px;color:#e94560;cursor:pointer;font-size:12px;font-family:inherit"
+        onclick="if(confirm('确定移除此建筑？')) { removeBuilding(${tIdx},'${ap}'); }">🗑 移除建筑</button>
+    </div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+// Map interaction functions
+function selectMapBuilding(tIdx, ap) {
+  window._selectedMapTile = tIdx;
+  renderContent();
+}
+
+function selectEmptyTile(tIdx, ap) {
+  window._selectedMapTile = tIdx;
+  renderContent();
+}
+
+function batchSetBuildingLv(ap, indices, lv) {
+  indices.forEach(idx => {
+    try { setVal(`${ap}.areaTiles[${idx}].building.lv`, lv); } catch(e) {}
+  });
+  toast(`已将 ${indices.length} 个建筑设为等级 ${lv}`);
+  renderContent();
+}
+
+function batchSetRoadLv(ap, indices, lv) {
+  indices.forEach(idx => {
+    try { setVal(`${ap}.areaTiles[${idx}].areaRoadData.roadLv`, lv); } catch(e) {}
+  });
+  toast(`已将 ${indices.length} 条道路设为等级 ${lv}`);
+  renderContent();
+}
+
+function changeBuildingType(tIdx, ap, newId) {
+  setVal(`${ap}.areaTiles[${tIdx}].building.buildingID`, newId);
+  toast(`已更换建筑为 ${(typeof GameData !== 'undefined' && GameData.BUILDING_ID_TO_NAME) ? GameData.BUILDING_ID_TO_NAME[newId] || newId : newId}`);
+  renderContent();
+}
+
+function placeBuilding(tIdx, ap, buildingId) {
+  if (buildingId < 0) return;
+  const path = `${ap}.areaTiles[${tIdx}]`;
+  try {
+    const tile = new Function('saveData', `return ${path}`)(saveData);
+    if (!tile.building) {
+      tile.building = {
+        buildingID: buildingId, lv: 1, buildTimeLeft: 0, upgradeTimeLeft: 0,
+        destroyTimeLeft: 0, noCancel: false,
+        shopItemList: { heroID: -1, forceID: -1, money: 0, weight: 0, maxWeight: -1, allItem: [] },
+        missionDatas: [], produceRate: 1, resourceStoreRate: 1,
+        areaID: tile.areaID, belongHeroID: -1, missionNumCount: 0, plotNumCount: 0, enemyMonth: 0
+      };
+    } else {
+      tile.building.buildingID = buildingId;
+      tile.building.lv = 1;
+    }
+    window._selectedMapTile = tIdx;
+    toast(`已放置 ${(typeof GameData !== 'undefined' && GameData.BUILDING_ID_TO_NAME) ? GameData.BUILDING_ID_TO_NAME[buildingId] || buildingId : buildingId}`);
+    renderContent();
+  } catch(e) { console.error('placeBuilding error:', e); }
+}
+
+function removeBuilding(tIdx, ap) {
+  const path = `${ap}.areaTiles[${tIdx}]`;
+  try {
+    const tile = new Function('saveData', `return ${path}`)(saveData);
+    tile.building = null;
+    window._selectedMapTile = -1;
+    toast('已移除建筑');
+    renderContent();
+  } catch(e) { console.error('removeBuilding error:', e); }
+}
+
+function renderAreaMissions(a) {
+  const tiles = a.areaTiles || [];
+  let missions = [];
+  tiles.forEach(t => {
+    if (t.building?.missionDatas) {
+      t.building.missionDatas.forEach(m => missions.push(m));
+    }
+  });
+  let html = `<div class="card"><div class="card-title">悬赏任务 (${missions.length})</div>`;
+  if (!missions.length) { html += '<p style="color:#666">无悬赏</p></div>'; return html; }
+
+  missions.forEach(m => {
+    html += `<div style="padding:8px;border-bottom:1px solid #222">
+      <div style="font-size:14px;color:#e94560">${m.name}</div>
+      <div style="font-size:12px;color:#888;margin-top:4px">
+        难度: ${r2(m.difficulty)} | 剩余天数: ${m.leftTime} | 名望奖励: ${r2(m.missionFameReward)} | 银两奖励: ${m.missionMoneyReward}
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function renderPlayerForceContribution() {
+  const forces = saveData.save?.Forces || [];
+  if (!forces.length) return '<div class="card"><div class="card-title">门派功绩</div><p style="color:#666">无门派数据</p></div>';
+
+  let html = `<div class="card"><div class="card-title">门派功绩 (${forces.length})</div>
+    <table class="item-table"><thead><tr>
+      <th>门派</th><th>风格</th><th>等级</th><th>掌门</th><th>玩家功绩</th>
+    </tr></thead><tbody>`;
+
+  forces.forEach((f, i) => {
+    const fp = `saveData.save.Forces[${i}]`;
+    const leaderHero = resolveHeroName(f.leader);
+    const leaderDisplay = leaderHero ? `${leaderHero}(${f.leader})` : f.leader;
+    html += `<tr>
+      <td style="color:${getForceColor(f.forceID)}">${f.forceName}</td>
+      <td>${f.forceStyle || ''}</td>
+      <td>${f.forceLv || 0}</td>
+      <td style="font-size:12px">${leaderDisplay}</td>
+      <td><input type="number" step="any" value="${r2(f.playerOutForceContribution || 0)}"
+        onchange="setVal('${fp}.playerOutForceContribution',parseFloat(this.value)||0)"></td>
+    </tr>`;
+  });
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+// ===== HELPERS =====
+function getAreaType(areaID) {
+  if (!saveData.save) return -1;
+  if (saveData.save.cityAreaID?.includes(areaID)) return 0;
+  if (saveData.save.villageAreaID?.includes(areaID)) return 1;
+  if (saveData.save.forceAreaID?.includes(areaID)) return 2;
+  return -1;
+}
+
+function r2(v) { return v == null ? 0 : Math.round(v * 100) / 100; }
+
+function field(label, type, value, path, options) {
+  if (type === 'select' && options) {
+    const opts = options.map(o =>
+      `<option value="${o.v}" ${value===o.v?'selected':''}>${o.l}</option>`).join('');
+    return `<div class="field"><label>${label}</label>
+      <select onchange="setVal('${path}',this.value==='true'?true:this.value==='false'?false:this.value)">${opts}</select></div>`;
+  }
+  const step = type === 'number' ? ' step="any"' : '';
+  return `<div class="field"><label>${label}</label>
+    <input type="${type}" value="${value ?? ''}"${step}
+      onchange="setVal('${path}',${type==='number'?'parseFloat(this.value)||0':'this.value'})"></div>`;
+}
+
+function fieldSelect(label, value, path, options) {
+  const opts = options.map(o =>
+    `<option value="${o.v}" ${value===o.v||String(value)===String(o.v)?'selected':''}>${o.l}</option>`).join('');
+  return `<div class="field"><label>${label}</label>
+    <select onchange="setVal('${path}',parseInt(this.value))">${opts}</select></div>`;
+}
+
+function setVal(path, value) {
+  try { new Function('saveData','v', path + '= v;')(saveData, value); }
+  catch(e) { console.error('setVal error:', path, e); }
+}
+
+function toast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 2500);
+}
+</script>
+</body>
+</html>
