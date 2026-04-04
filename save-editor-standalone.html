@@ -899,7 +899,7 @@ GameData.AREA_TYPE_NAMES = {
 	3: "野外"
 };
 GameData.MENPAI_NAMES = new Set(['长乐帮', '唐门', '药王谷', '丐帮', '飞龙门', '茅山派', '铸剑山庄', '五毒教', '阎罗殿', '大隐阁', '少林', '少林寺', '武当', '武当派', '霸刀门', '蓬莱派', '峨嵋派', '峨眉派', '崆峒派', '神机门', '霹雳堂', '金刚密宗', '天山', '天山派', '聚义门', '黄河帮', '八卦门', '海沙帮', '铁掌帮', '仙霞派', '巨鲸帮', '金龙帮', '青城派', '伏牛派']);
-GameData.RESOURCE_NAMES = ["银两", "粮食", "木料", "矿石", "药材", "人口"];
+GameData.RESOURCE_NAMES = ["银两", "粮食", "木料", "矿石", "药材", "威望"];
 GameData.SKILL_EFFECT_MAP = [{
 	id: 0,
 	name: "力道"
@@ -8432,21 +8432,21 @@ GameData.BUILDING_ICONS = {
 
 // 建築可升級最大等級
 GameData.BUILDING_MAX_LEVEL = {
-	0: 6,   // 正厅
-	1: 6,   // 藏经阁
-	2: 6,   // 练武场
-	3: 6,   // 闭关室
-	4: 6,   // 祠堂
-	5: 6,   // 工匠坊
-	6: 6,   // 炼丹炉
-	7: 6,   // 疗伤室
-	8: 6,   // 宿舍
-	9: 6,   // 仓库
-	10: 6,  // 钱庄
-	11: 6,  // 农田
-	12: 6,  // 森林
-	13: 6,  // 矿场
-	14: 6,  // 药园
+	0: 10,  // 正厅
+	1: 10,  // 藏经阁
+	2: 10,  // 练武场
+	3: 10,  // 闭关室
+	4: 10,  // 祠堂
+	5: 10,  // 工匠坊
+	6: 10,  // 炼丹炉
+	7: 10,  // 疗伤室
+	8: 10,  // 宿舍
+	9: 10,  // 仓库
+	10: 10, // 钱庄
+	11: 10, // 农田
+	12: 10, // 森林
+	13: 10, // 矿场
+	14: 10, // 药园
 };
 
 GameData.BUILDING_ID_TO_NAME = {
@@ -9332,7 +9332,8 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 });
 // === Embedded skills_data.json ===
-window.__EMBEDDED_SKILLS_DATA__ = [
+window.__EMBEDDED_SKILLS_DATA__ = 
+[
     {
         "id":  0,
         "类别":  "内功",
@@ -56145,7 +56146,8 @@ window.__EMBEDDED_SKILLS_DATA__ = [
         "奇门":  0,
         "射术":  0
     }
-];
+]
+;
 </script>
 <script>
 // ===== GLOBALS =====
@@ -56953,6 +56955,29 @@ function renderHeroSkills(h, src) {
           ${field('敌方加成', 'number', r2(sk.enemyUseSpeAddValue), `${sp}.enemyUseSpeAddValue`)}
         </div>`;
 
+        // skillMaxPracticeExpData — max practice exp & max read exp per book level
+        const expDataArr = h.skillMaxPracticeExpData || [];
+        let expIdx = expDataArr.findIndex(e => e.skillID === sk.skillID);
+        if (expIdx === -1) {
+          expDataArr.push({ skillID: sk.skillID, maxPracticeExp: 0, maxReadExp: [0,0,0,0,0,0] });
+          expIdx = expDataArr.length - 1;
+        }
+        const expEntry = expDataArr[expIdx];
+        const ep = `${p}.skillMaxPracticeExpData[${expIdx}]`;
+        const bookLvNames = ['残本','仿本','善本','古本','珍本','完本'];
+        const bookLvColors = ['#6b7280','#059669','#3b82f6','#7c3aed','#d97706','#dc2626'];
+        html += `<div class="stat-section-title" style="color:#f1c40f">最高修炼/读书经验</div>`;
+        html += `<div class="field-grid" style="margin-bottom:6px">
+          ${field('最高修炼经验', 'number', r2(expEntry.maxPracticeExp), `${ep}.maxPracticeExp`)}
+        </div>`;
+        html += `<div style="font-size:11px;color:#888;margin:4px 0">最高读书经验 (按秘籍品级)</div>`;
+        html += `<div class="field-grid">`;
+        for (let bl = 0; bl < 6; bl++) {
+          const val = (expEntry.maxReadExp && expEntry.maxReadExp[bl]) ? r2(expEntry.maxReadExp[bl]) : 0;
+          html += `<div class="field"><label style="color:${bookLvColors[bl]}">${bookLvNames[bl]}</label><input type="number" value="${val}" onchange="setVal('${ep}.maxReadExp[${bl}]',parseFloat(this.value))"></div>`;
+        }
+        html += `</div>`;
+
         // speEquipData — passive equip bonuses
         const equipStats = sk.speEquipData?.heroSpeAddData;
         if (equipStats && Object.keys(equipStats).length) {
@@ -57383,7 +57408,7 @@ function renderHeroRelations(h, src) {
   html += `<div class="card"><div class="card-title">人际关系</div>`;
 
   const singulars = [
-    {key:'Teacher',label:'师父'},{key:'Lover',label:'伴侣'}
+    {key:'Teacher',label:'师傅'},{key:'Lover',label:'夫妻'}
   ];
   singulars.forEach(r => {
     const val = h[r.key];
@@ -57395,16 +57420,16 @@ function renderHeroRelations(h, src) {
       <span style="width:60px;color:#888;font-size:13px">${r.label}</span>
       <span style="flex:1">${display}</span>
       <input type="number" value="${val}" style="width:70px" title="英雄ID"
-        onchange="setVal('${p}.${r.key}',parseInt(this.value));renderContent()">
-      <button class="tag-remove" onclick="setVal('${p}.${r.key}',-1);renderContent()">✕</button>
+        onchange="setSingularRelation('${src}','${r.key}',parseInt(this.value))">
+      <button class="tag-remove" onclick="setSingularRelation('${src}','${r.key}',-1)">✕</button>
     </div>`;
   });
 
   // Array relations (Students, Friends, Brothers, Haters, Relatives, PreLovers)
   const rels = [
-    {key:'Students',label:'弟子'},{key:'Friends',label:'好友'},
-    {key:'Brothers',label:'义兄弟'},{key:'Haters',label:'仇人'},
-    {key:'Relatives',label:'亲属'},{key:'PreLovers',label:'前任'}
+    {key:'Students',label:'徒弟'},{key:'Brothers',label:'结义'},
+    {key:'PreLovers',label:'情侣'},{key:'Friends',label:'朋友'},
+    {key:'Haters',label:'仇敌'}
   ];
 
   rels.forEach(r => {
@@ -57450,9 +57475,63 @@ function findHeroById(id) {
       || saveData.tempHeroes.find(x => x && x.heroID === id);
 }
 
+// Relationship mirror mapping: when A has relation X with B, B should have relation Y with A
+const REL_MIRROR = {
+  Teacher: 'Students', Students: 'Teacher',
+  Lover: 'Lover',
+  Friends: 'Friends', Brothers: 'Brothers', Haters: 'Haters',
+  Relatives: 'Relatives', PreLovers: 'PreLovers'
+};
+
+function addRelMirror(heroId, targetId, key) {
+  const mirrorKey = REL_MIRROR[key];
+  if (!mirrorKey) return;
+  const target = findHeroById(targetId);
+  if (!target) return;
+  if (mirrorKey === 'Teacher') {
+    // singular: set Teacher = heroId
+    if (target.Teacher < 0 || target.Teacher === undefined) target.Teacher = heroId;
+  } else if (mirrorKey === 'Lover') {
+    if (target.Lover < 0 || target.Lover === undefined) target.Lover = heroId;
+  } else {
+    if (!target[mirrorKey]) target[mirrorKey] = [];
+    if (!target[mirrorKey].includes(heroId)) target[mirrorKey].push(heroId);
+  }
+}
+
+function removeRelMirror(heroId, targetId, key) {
+  const mirrorKey = REL_MIRROR[key];
+  if (!mirrorKey) return;
+  const target = findHeroById(targetId);
+  if (!target) return;
+  if (mirrorKey === 'Teacher') {
+    if (target.Teacher === heroId) target.Teacher = -1;
+  } else if (mirrorKey === 'Lover') {
+    if (target.Lover === heroId) target.Lover = -1;
+  } else {
+    if (target[mirrorKey]) {
+      const idx = target[mirrorKey].indexOf(heroId);
+      if (idx >= 0) target[mirrorKey].splice(idx, 1);
+    }
+  }
+}
+
 function setHeroFavor(heroId, value) {
   const h = findHeroById(heroId);
   if (h) h.favor = value;
+}
+
+function setSingularRelation(src, key, newId) {
+  const list = src === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  const h = list[selectedIndex];
+  if (!h) return;
+  const oldId = h[key];
+  // Remove mirror from old target
+  if (oldId >= 0) removeRelMirror(h.heroID, oldId, key);
+  h[key] = newId;
+  // Add mirror to new target
+  if (newId >= 0) addRelMirror(h.heroID, newId, key);
+  renderContent();
 }
 
 function addRelation(src, key) {
@@ -57465,7 +57544,8 @@ function addRelation(src, key) {
   if (!h[key]) h[key] = [];
   if (h[key].includes(id)) { toast('已存在该关系', true); return; }
   h[key].push(id);
-  toast(`已添加${resolveHeroName(id)||id}为${key}`);
+  addRelMirror(h.heroID, id, key);
+  toast(`已添加${resolveHeroName(id)||id}为${key}（双向同步）`);
   renderContent();
 }
 
@@ -57474,7 +57554,8 @@ function removeRelation(src, key, idx) {
   const h = list[selectedIndex];
   if (!h || !h[key]) return;
   const removed = h[key].splice(idx, 1)[0];
-  toast(`已移除: ${resolveHeroName(removed)||removed}`);
+  removeRelMirror(h.heroID, removed, key);
+  toast(`已移除: ${resolveHeroName(removed)||removed}（双向同步）`);
   renderContent();
 }
 
@@ -57484,9 +57565,11 @@ function moveRelation(src, fromKey, idx, toKey) {
   const h = list[selectedIndex];
   if (!h || !h[fromKey]) return;
   const id = h[fromKey].splice(idx, 1)[0];
+  removeRelMirror(h.heroID, id, fromKey);
   if (!h[toKey]) h[toKey] = [];
   if (!h[toKey].includes(id)) h[toKey].push(id);
-  toast(`已将${resolveHeroName(id)||id}从${fromKey}移至${toKey}`);
+  addRelMirror(h.heroID, id, toKey);
+  toast(`已将${resolveHeroName(id)||id}从${fromKey}移至${toKey}（双向同步）`);
   renderContent();
 }
 
@@ -57516,11 +57599,12 @@ function renderArea(c) {
     </div>
     <div class="card"><div class="card-title">地区状态</div>
       <div class="field-grid">
+        ${field('人口', 'number', r2(a.people), `${ap}.people`)}
         ${field('人口上限', 'number', r2(a.maxPeople), `${ap}.maxPeople`)}
-        ${field('当前人口', 'number', r2(a.people), `${ap}.people`)}
         ${field('治安', 'number', r2(a.safe), `${ap}.safe`)}
         ${field('民心', 'number', r2(a.support), `${ap}.support`)}
         ${field('防御', 'number', r2(a.defence), `${ap}.defence`)}
+        ${field('特产', 'text', a.speProduct || '', `${ap}.speProduct`)}
       </div>
     </div>
     <div class="card"><div class="card-title">驻守人物</div>`;
@@ -57538,6 +57622,64 @@ function renderArea(c) {
       html += `<span style="color:#e0e0e0;margin-right:10px">${ca?ca.areaName:'?'}(${id})</span>`;
     });
     html += `</p></div>`;
+
+    // Resources
+    const GD = (typeof GameData !== 'undefined') ? GameData : {};
+    const resNames = GD.RESOURCE_NAMES || ['银两','粮食','木料','矿石','药材','威望'];
+    const resColors = ['#f1c40f','#2ecc71','#8B4513','#95a5a6','#9b59b6','#e94560'];
+    const res = a.changeResource || [0,0,0,0,0,0];
+    const resRate = a.resourceValueRateBase || [0,0,0,0,0,0];
+    const isSect = aType === 2;
+
+    html += `<div class="card"><div class="card-title">资源产出</div>
+      <div class="field-grid">`;
+    for (let ri = 0; ri < 6; ri++) {
+      html += `<div class="field"><label style="color:${resColors[ri]}">${resNames[ri]}</label>
+        <input type="number" step="any" value="${r2(res[ri])}" onchange="setVal('${ap}.changeResource[${ri}]',parseFloat(this.value)||0)"></div>`;
+    }
+    html += `</div></div>`;
+
+    html += `<div class="card"><div class="card-title">产出率</div>
+      <div class="field-grid">`;
+    for (let ri = 0; ri < 6; ri++) {
+      html += `<div class="field"><label style="color:${resColors[ri]}">${resNames[ri]}</label>
+        <input type="number" step="any" value="${r2(resRate[ri])}" onchange="setVal('${ap}.resourceValueRateBase[${ri}]',parseFloat(this.value)||0)"></div>`;
+    }
+    html += `</div></div>`;
+
+    // Force resources (門派 only)
+    if (isSect) {
+      const forces = saveData.save?.Forces || [];
+      const forceIdx = forces.findIndex(f => f.mainAreaID === a.areaID || (f.ownAreasID && f.ownAreasID.includes(a.areaID) && f.forceID === a.belongForceID));
+      const fi = forceIdx >= 0 ? forceIdx : forces.findIndex(f => f.forceID === a.belongForceID);
+      if (fi >= 0) {
+        const f = forces[fi];
+        const fp = `saveData.save.Forces[${fi}]`;
+        const store = f.resourceStore || [0,0,0,0,0,0];
+        const storeMax = f.resourceStoreMax || [0,0,0,0,0,0];
+        const change = f.resourceChange || [0,0,0,0,0,0];
+
+        html += `<div class="card"><div class="card-title">门派资源 — ${f.forceName}</div>
+          <div class="field-grid" style="margin-bottom:8px">
+            ${field('门派等级', 'number', f.forceLv, `${fp}.forceLv`)}
+            ${field('总人口', 'number', f.totalPopulation, `${fp}.totalPopulation`)}
+            ${field('总薪俸', 'number', f.totalSalary, `${fp}.totalSalary`)}
+          </div>
+          <div style="font-size:12px;color:#888;margin:8px 0 4px">资源储量 / 上限 / 每月变化</div>
+          <table class="item-table"><thead><tr>
+            <th>资源</th><th>储量</th><th>上限</th><th>变化</th>
+          </tr></thead><tbody>`;
+        for (let ri = 0; ri < 6; ri++) {
+          html += `<tr>
+            <td style="color:${resColors[ri]}">${resNames[ri]}</td>
+            <td><input type="number" step="any" value="${r2(store[ri])}" style="width:80px" onchange="setVal('${fp}.resourceStore[${ri}]',parseFloat(this.value)||0)"></td>
+            <td><input type="number" step="any" value="${r2(storeMax[ri])}" style="width:80px" onchange="setVal('${fp}.resourceStoreMax[${ri}]',parseFloat(this.value)||0)"></td>
+            <td style="color:${change[ri]>=0?'#2ecc71':'#e74c3c'}">${change[ri]>=0?'+':''}${r2(change[ri])}</td>
+          </tr>`;
+        }
+        html += `</tbody></table></div>`;
+      }
+    }
   } else if (heroSubTab === 'buildings') {
     html += renderAreaBuildings(a, ap);
   } else if (heroSubTab === 'missions') {
@@ -57572,13 +57714,14 @@ function renderAreaBuildings(a, ap) {
   let html = `<div class="card"><div class="card-title">门派地图 — ${a.areaName} (${w}×${h})</div>`;
   html += `<div class="batch-bar">
     <span style="color:#888;font-size:12px">批量操作:</span>
-    <button onclick="batchSetBuildingLv('${ap}', ${JSON.stringify(allBuildings.map(b=>b.idx))}, 6)">全部建筑满级</button>
-    <button onclick="batchSetRoadLv('${ap}', ${JSON.stringify(allRoads)}, 6)">全部道路满级</button>
-    <button onclick="batchSetBuildingLv('${ap}', ${JSON.stringify(allBuildings.map(b=>b.idx))}, 6);batchSetRoadLv('${ap}', ${JSON.stringify(allRoads)}, 6)">全部满级</button>
+    <button onclick="batchSetBuildingLv('${ap}', ${JSON.stringify(allBuildings.map(b=>b.idx))}, 10)">全部建筑满级</button>
+    <button onclick="batchSetRoadLv('${ap}', ${JSON.stringify(allRoads)}, 10)">全部道路满级</button>
+    <button onclick="batchSetBuildingLv('${ap}', ${JSON.stringify(allBuildings.map(b=>b.idx))}, 10);batchSetRoadLv('${ap}', ${JSON.stringify(allRoads)}, 10)">全部满级</button>
     <select onchange="if(this.value) { batchSetBuildingLv('${ap}', ${JSON.stringify(allBuildings.map(b=>b.idx))}, parseInt(this.value)); this.value=''; }">
       <option value="">设置建筑等级...</option>
       <option value="1">等级 1</option><option value="2">等级 2</option><option value="3">等级 3</option>
       <option value="4">等级 4</option><option value="5">等级 5</option><option value="6">等级 6</option>
+      <option value="7">等级 7</option><option value="8">等级 8</option><option value="9">等级 9</option><option value="10">等级 10</option>
     </select>
   </div>`;
 
@@ -57587,7 +57730,7 @@ function renderAreaBuildings(a, ap) {
   html += `<div class="sect-map-grid-wrap">`;
   html += `<div class="sect-map-grid" style="grid-template-columns:repeat(${w}, 42px);">`;
 
-  for (let r = 0; r < h; r++) {
+  for (let r = h - 1; r >= 0; r--) {
     for (let c = 0; c < w; c++) {
       const tIdx = r * w + c;
       const t = tiles[tIdx];
@@ -57681,7 +57824,7 @@ function renderAreaBuildings(a, ap) {
     const icon = BICON[b.buildingID] || '🏗️';
     html += `<tr style="cursor:pointer" onclick="selectMapBuilding(${idx},'${ap}')">
       <td>${icon}</td><td>${name}</td><td>(${row},${col})</td>
-      <td><input type="number" min="0" max="6" value="${b.lv}" style="width:50px"
+      <td><input type="number" min="0" max="10" value="${b.lv}" style="width:50px"
         onclick="event.stopPropagation()"
         onchange="setVal('${ap}.areaTiles[${idx}].building.lv',parseInt(this.value));renderContent()"></td>
       <td>${r2(b.produceRate)}</td><td>${r2(b.resourceStoreRate)}</td>
@@ -57716,7 +57859,7 @@ function renderBuildingDetail(a, ap, tiles, BNAME, BICON, specialBldId) {
         <div style="font-size:12px;color:#888;margin-bottom:6px">道路属性</div>
         <div style="margin-bottom:8px"><label style="font-size:12px;color:#888">道路等级</label>
           <div class="bld-lv-stars">`;
-    for (let lv = 0; lv <= 6; lv++) {
+    for (let lv = 0; lv <= 10; lv++) {
       html += `<div class="bld-lv-star${rd.roadLv === lv ? ' active' : ''}"
         onclick="setVal('${ap}.areaTiles[${tIdx}].areaRoadData.roadLv',${lv});renderContent()"
         title="等级 ${lv}">${lv}</div>`;
@@ -57798,7 +57941,7 @@ function renderBuildingDetail(a, ap, tiles, BNAME, BICON, specialBldId) {
   // Level stars
   html += `<div style="margin-bottom:12px"><label style="font-size:12px;color:#888">建筑等级</label>
     <div class="bld-lv-stars">`;
-  for (let lv = 0; lv <= 6; lv++) {
+  for (let lv = 0; lv <= 10; lv++) {
     html += `<div class="bld-lv-star${b.lv === lv ? ' active' : ''}"
       onclick="setVal('${ap}.areaTiles[${tIdx}].building.lv',${lv});renderContent()"
       title="等级 ${lv}">${lv}</div>`;
