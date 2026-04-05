@@ -231,10 +231,11 @@ body { font-family: 'Microsoft YaHei', 'SimHei', sans-serif; background: #1a1a2e
 <body>
 
 <div class="topbar">
-  <h1>⚔ 龍胤立志傳 存档编辑器</h1>
+  <h1>⚔ 龍胤立志傳 存档编辑器 <span style="font-size:11px;color:#666;font-weight:normal">v1.0.0</span></h1>
   <span class="save-info" id="saveInfo">未加载存档</span>
   <button class="btn-load" onclick="loadFolder()">📂 加载存档</button>
   <button class="btn-save" onclick="saveAll()">💾 保存存档</button>
+  <input type="file" id="folderInput" webkitdirectory multiple style="display:none" onchange="loadFromFileInput(this.files)">
 </div>
 
 <div class="tabs" id="mainTabs">
@@ -8449,6 +8450,35 @@ GameData.BUILDING_MAX_LEVEL = {
 	14: 10, // 药园
 };
 
+// Building defaults from BuildingData (produce, maintain, bonus per level)
+GameData.BUILDING_DEFAULTS = {
+	0:{produce:"威望+10",maintain:"",bonus:"区域上限2;弟子上限20;仓储容量4"},
+	1:{produce:"",maintain:"银钱-50",bonus:"理论经验0.1;藏经容量40"},
+	2:{produce:"",maintain:"粮食-50",bonus:"实战经验0.1"},
+	3:{produce:"",maintain:"银钱-50",bonus:"理论经验0.05;实战经验0.05"},
+	4:{produce:"威望+10",maintain:"银钱-100",bonus:"科研效率0.4;学识经验0.1;口才经验0.1"},
+	5:{produce:"银钱+100",maintain:"矿石-50",bonus:"建造速度0.2;锻造经验0.1;采伐经验0.1"},
+	6:{produce:"银钱+100",maintain:"药材-50",bonus:"疗伤效率0.05;恢复效率0.05;炼药经验0.1;木植经验0.1"},
+	7:{produce:"银钱+100",maintain:"药材-50",bonus:"本地疗伤效率0.1;医术经验0.1;毒术经验0.1"},
+	8:{produce:"",maintain:"粮食-50",bonus:"弟子上限20;本地恢复效率0.1;烹饪经验0.1"},
+	9:{produce:"",maintain:"木料-50",bonus:"资源点产量0.1;仓储容量2"},
+	10:{produce:"银钱+100",maintain:"",bonus:""},
+	11:{produce:"粮食+100",maintain:"",bonus:""},
+	12:{produce:"木料+100",maintain:"",bonus:""},
+	13:{produce:"矿石+100",maintain:"",bonus:""},
+	14:{produce:"药材+100",maintain:"",bonus:""},
+	30:{produce:"银钱+20",maintain:"",bonus:""},
+	31:{produce:"粮食+20",maintain:"",bonus:""},
+	32:{produce:"木料+20",maintain:"",bonus:""},
+	33:{produce:"矿石+20",maintain:"",bonus:""},
+	34:{produce:"药材+20",maintain:"",bonus:""},
+	35:{produce:"",maintain:"粮食-40",bonus:"弟子上限2"},
+	36:{produce:"",maintain:"粮食-20",bonus:"仓储容量1"},
+	37:{produce:"",maintain:"银钱-30",bonus:"实战经验0.02"},
+	38:{produce:"",maintain:"银钱-30",bonus:"理论经验0.02"},
+	40:{produce:"",maintain:"银钱-40",bonus:"科研效率0.08"}
+};
+
 GameData.BUILDING_ID_TO_NAME = {
 	0: "正厅",
 	1: "藏经阁",
@@ -9331,6 +9361,501 @@ document.addEventListener('DOMContentLoaded', function() {
 		window.GameData.loadFromServerFiles()
 	}
 });
+
+// === Game Data: HeroTag, Tech, Skin ===
+GameData.HERO_TAG_DATA = {
+  0:{name:"力道",value:1,effect:"力道潜力+5;力道+5",cat:"武学"},
+  1:{name:"孔武有力",value:2,effect:"力道潜力+10;力道+10",cat:"武学"},
+  2:{name:"拔山扛鼎",value:4,effect:"力道潜力+15;力道+15",cat:"武学"},
+  3:{name:"灵巧",value:1,effect:"灵巧潜力+5;灵巧+5",cat:"武学"},
+  4:{name:"手疾眼快",value:2,effect:"灵巧潜力+10;灵巧+10",cat:"武学"},
+  5:{name:"七窍玲珑",value:4,effect:"灵巧潜力+15;灵巧+15",cat:"武学"},
+  6:{name:"智力",value:1,effect:"智力潜力+5;智力+5",cat:"武学"},
+  7:{name:"足智多谋",value:2,effect:"智力潜力+10;智力+10",cat:"武学"},
+  8:{name:"聪慧绝伦",value:4,effect:"智力潜力+15;智力+15",cat:"武学"},
+  9:{name:"意志",value:1,effect:"意志潜力+5;意志+5",cat:"武学"},
+  10:{name:"动心忍性",value:2,effect:"意志潜力+10;意志+10",cat:"武学"},
+  11:{name:"百折不挠",value:4,effect:"意志潜力+15;意志+15",cat:"武学"},
+  12:{name:"体质",value:1,effect:"体质潜力+5;体质+5",cat:"武学"},
+  13:{name:"强身健体",value:2,effect:"体质潜力+10;体质+10",cat:"武学"},
+  14:{name:"钢筋铁骨",value:4,effect:"体质潜力+15;体质+15",cat:"武学"},
+  15:{name:"经脉",value:1,effect:"经脉潜力+5;经脉+5",cat:"武学"},
+  16:{name:"运气自如",value:2,effect:"经脉潜力+10;经脉+10",cat:"武学"},
+  17:{name:"奇经八脉",value:4,effect:"经脉潜力+15;经脉+15",cat:"武学"},
+  18:{name:"内家",value:1,effect:"内功潜力+5;内功+5",cat:"武学"},
+  19:{name:"内力精纯",value:2,effect:"内功潜力+10;内功+10",cat:"武学"},
+  20:{name:"炉火纯青",value:4,effect:"内功潜力+15;内功+15",cat:"武学"},
+  21:{name:"轻功",value:1,effect:"轻功潜力+5;轻功+5",cat:"武学"},
+  22:{name:"飞檐走壁",value:2,effect:"轻功潜力+10;轻功+10",cat:"武学"},
+  23:{name:"神出鬼没",value:4,effect:"轻功潜力+15;轻功+15",cat:"武学"},
+  24:{name:"绝技",value:1,effect:"绝技潜力+5;绝技+5",cat:"武学"},
+  25:{name:"身怀绝技",value:2,effect:"绝技潜力+10;绝技+10",cat:"武学"},
+  26:{name:"绝艺超群",value:4,effect:"绝技潜力+15;绝技+15",cat:"武学"},
+  27:{name:"拳掌",value:1,effect:"拳掌潜力+5;拳掌+5",cat:"武学"},
+  28:{name:"拳不离手",value:2,effect:"拳掌潜力+10;拳掌+10",cat:"武学"},
+  29:{name:"铁手钢拳",value:4,effect:"拳掌潜力+15;拳掌+15",cat:"武学"},
+  30:{name:"御剑",value:1,effect:"剑法潜力+5;剑法+5",cat:"武学"},
+  31:{name:"剑随意动",value:2,effect:"剑法潜力+10;剑法+10",cat:"武学"},
+  32:{name:"人剑合一",value:4,effect:"剑法潜力+15;剑法+15",cat:"武学"},
+  33:{name:"耍刀",value:1,effect:"刀法潜力+5;刀法+5",cat:"武学"},
+  34:{name:"横刀跃马",value:2,effect:"刀法潜力+10;刀法+10",cat:"武学"},
+  35:{name:"一刀两断",value:4,effect:"刀法潜力+15;刀法+15",cat:"武学"},
+  36:{name:"长兵",value:1,effect:"长兵潜力+5;长兵+5",cat:"武学"},
+  37:{name:"舞枪弄棍",value:2,effect:"长兵潜力+10;长兵+10",cat:"武学"},
+  38:{name:"枪扫六合",value:4,effect:"长兵潜力+15;长兵+15",cat:"武学"},
+  39:{name:"奇门",value:1,effect:"奇门潜力+5;奇门+5",cat:"武学"},
+  40:{name:"旁门左道",value:2,effect:"奇门潜力+10;奇门+10",cat:"武学"},
+  41:{name:"奇门遁甲",value:4,effect:"奇门潜力+15;奇门+15",cat:"武学"},
+  42:{name:"射术",value:1,effect:"射术潜力+5;射术+5",cat:"武学"},
+  43:{name:"百步穿杨",value:2,effect:"射术潜力+10;射术+10",cat:"武学"},
+  44:{name:"例无虚发",value:4,effect:"射术潜力+15;射术+15",cat:"武学"},
+  45:{name:"外门",value:1,effect:"护甲+5",cat:"武学"},
+  46:{name:"坚若磐石",value:2,effect:"护甲+10",cat:"武学"},
+  47:{name:"刀枪不入",value:4,effect:"护甲+15",cat:"武学"},
+  48:{name:"掌风",value:3,effect:"拳掌威力+0.05;内劲+0.05",cat:"武学"},
+  49:{name:"排山倒海",value:8,effect:"拳掌威力+0.1;内劲+0.1;拳掌距离+1",cat:"武学"},
+  50:{name:"剑气",value:3,effect:"剑法威力+0.05;内劲+0.05",cat:"武学"},
+  51:{name:"气冲斗牛",value:8,effect:"剑法威力+0.1;内劲+0.1;剑法距离+1",cat:"武学"},
+  52:{name:"刀锋",value:3,effect:"刀法威力+0.05;内劲+0.05",cat:"武学"},
+  53:{name:"削铁无声",value:8,effect:"刀法威力+0.1;内劲+0.1;刀法距离+1",cat:"武学"},
+  54:{name:"枪芒",value:3,effect:"长兵威力+0.05;内劲+0.05",cat:"武学"},
+  55:{name:"枪出如龙",value:8,effect:"长兵威力+0.1;内劲+0.1;长兵距离+1",cat:"武学"},
+  56:{name:"奇技",value:3,effect:"奇门威力+0.05;内劲+0.05",cat:"武学"},
+  57:{name:"奇异莫名",value:8,effect:"奇门威力+0.1;内劲+0.1;奇门距离+1",cat:"武学"},
+  58:{name:"惊弓",value:3,effect:"射术威力+0.05;内劲+0.05",cat:"武学"},
+  59:{name:"摘叶飞花",value:8,effect:"射术威力+0.1;内劲+0.1;射术距离+1",cat:"武学"},
+  60:{name:"脱胎换骨",value:6,effect:"复生+0.1;负面抗性+0.1",cat:"高级"},
+  61:{name:"羽化登仙",value:8,effect:"复生+0.15;负面抗性+0.15",cat:"高级"},
+  62:{name:"不老长生",value:12,effect:"复生+0.2;负面抗性+0.2",cat:"高级"},
+  63:{name:"内息灼热",value:5,effect:"灼烧+0.15",cat:"高级"},
+  64:{name:"焚身烈焰",value:7,effect:"灼烧+0.25",cat:"高级"},
+  65:{name:"内息冰寒",value:5,effect:"冰寒+0.15",cat:"高级"},
+  66:{name:"刺骨奇寒",value:7,effect:"冰寒+0.25",cat:"高级"},
+  67:{name:"阴阳调和",value:10,effect:"灼烧+0.1;冰寒+0.1;恢复+0.1;调息+0.1",cat:"高级"},
+  68:{name:"先天真气",value:10,effect:"内劲+0.15;护体真气+0.3",cat:"高级"},
+  69:{name:"万物归墟",value:10,effect:"护体真气+0.3;吸内+0.3",cat:"高级"},
+  70:{name:"混元一气",value:10,effect:"内劲+0.15;内伤+0.15",cat:"高级"},
+  71:{name:"至阳至刚",value:8,effect:"灼烧+0.1;外伤+0.2",cat:"高级"},
+  72:{name:"至阴至柔",value:8,effect:"冰寒+0.1;内伤+0.2",cat:"高级"},
+  73:{name:"刚柔并济",value:10,effect:"外伤+0.15;内伤+0.15",cat:"高级"},
+  74:{name:"物我两忘",value:8,effect:"轻灵+0.15;飘逸+0.15",cat:"高级"},
+  75:{name:"移形换位",value:8,effect:"轻功+30;绝技-15;闪避+0.15",cat:"高级"},
+  76:{name:"陆地飞行",value:8,effect:"轻功+10;速度+0.1;急速+0.1",cat:"高级"},
+  77:{name:"扭转乾坤",value:8,effect:"斗转+0.2;调息+0.2",cat:"高级"},
+  78:{name:"不动如山",value:9,effect:"绝技+30;轻功-15;伤害抗性+0.1",cat:"高级"},
+  79:{name:"神鬼莫测",value:9,effect:"绝技+20;轻功+10;反击+0.05",cat:"高级"},
+  80:{name:"以劲御气",value:9,effect:"绝技+10;外伤+0.1;内劲+0.1",cat:"高级"},
+  81:{name:"艺成百家",value:8,effect:"力道+5;灵巧+5;智力+5;意志+5;体质+5;经脉+5",cat:"高级"},
+  82:{name:"武学宗师",value:8,effect:"拳掌+5;剑法+5;刀法+5;长兵+5;奇门+5;射术+5",cat:"高级"},
+  83:{name:"登峰造极",value:15,effect:"伤害+0.15;伤害抗性+0.1",cat:"高级"},
+  84:{name:"返璞归真",value:8,effect:"真伤+0.25",cat:"高级"},
+  85:{name:"起死回生",value:8,effect:"复生+0.3",cat:"高级"},
+  86:{name:"天人合一",value:10,effect:"复生+0.1;无敌+0.1;康复+0.1",cat:"高级"},
+  87:{name:"功德圆满",value:8,effect:"霸体+0.15;伤害抗性+0.1",cat:"高级"},
+  88:{name:"即身成佛",value:12,effect:"无敌+0.15;真伤+0.15",cat:"高级"},
+  89:{name:"太极圆转",value:8,effect:"反弹+0.15",cat:"高级"},
+  90:{name:"轰天震地",value:8,effect:"眩晕+0.15;动摇+0.15",cat:"高级"},
+  91:{name:"十殿阎王",value:8,effect:"内伤+0.15;削内+0.6",cat:"高级"},
+  92:{name:"力降十会",value:8,effect:"力道+15;伤害+0.15",cat:"高级"},
+  93:{name:"医术",value:1,effect:"医术潜力+5;医术+10",cat:"技艺"},
+  94:{name:"术精岐黄",value:2,effect:"医术潜力+10;医术+20",cat:"技艺"},
+  95:{name:"妙手回春",value:3,effect:"医术潜力+15;医术+30",cat:"技艺"},
+  96:{name:"毒术",value:1,effect:"毒术潜力+5;毒术+10",cat:"技艺"},
+  97:{name:"五毒俱全",value:2,effect:"毒术潜力+10;毒术+20",cat:"技艺"},
+  98:{name:"见血封喉",value:3,effect:"毒术潜力+15;毒术+30",cat:"技艺"},
+  99:{name:"学识",value:1,effect:"学识潜力+5;学识+10",cat:"技艺"},
+  100:{name:"见多识广",value:2,effect:"学识潜力+10;学识+20",cat:"技艺"},
+  101:{name:"学富五车",value:3,effect:"学识潜力+15;学识+30",cat:"技艺"},
+  102:{name:"口才",value:1,effect:"口才潜力+5;口才+10",cat:"技艺"},
+  103:{name:"口齿伶俐",value:2,effect:"口才潜力+10;口才+20",cat:"技艺"},
+  104:{name:"舌灿莲花",value:3,effect:"口才潜力+15;口才+30",cat:"技艺"},
+  105:{name:"采伐",value:1,effect:"采伐潜力+5;采伐+10",cat:"技艺"},
+  106:{name:"劈荆斩棘",value:2,effect:"采伐潜力+10;采伐+20",cat:"技艺"},
+  107:{name:"铸山煮海",value:3,effect:"采伐潜力+15;采伐+30",cat:"技艺"},
+  108:{name:"木植",value:1,effect:"木植潜力+5;木植+10",cat:"技艺"},
+  109:{name:"精耕细作",value:2,effect:"木植潜力+10;木植+20",cat:"技艺"},
+  110:{name:"万木争荣",value:3,effect:"木植潜力+15;木植+30",cat:"技艺"},
+  111:{name:"锻造",value:1,effect:"锻造潜力+5;锻造+10",cat:"技艺"},
+  112:{name:"千锤百炼",value:2,effect:"锻造潜力+10;锻造+20",cat:"技艺"},
+  113:{name:"鬼斧神工",value:3,effect:"锻造潜力+15;锻造+30",cat:"技艺"},
+  114:{name:"炼药",value:1,effect:"炼药潜力+5;炼药+10",cat:"技艺"},
+  115:{name:"对症下药",value:2,effect:"炼药潜力+10;炼药+20",cat:"技艺"},
+  116:{name:"灵丹妙药",value:3,effect:"炼药潜力+15;炼药+30",cat:"技艺"},
+  117:{name:"烹饪",value:1,effect:"烹饪潜力+5;烹饪+10",cat:"技艺"},
+  118:{name:"烩不厌细",value:2,effect:"烹饪潜力+10;烹饪+20",cat:"技艺"},
+  119:{name:"炮凤烹龙",value:3,effect:"烹饪潜力+15;烹饪+30",cat:"技艺"},
+  120:{name:"毒医",value:1,effect:"医术+3;毒术+5;毒素+0.02",cat:"技艺"},
+  121:{name:"以毒攻毒",value:2,effect:"医术+5;毒术+10;毒素+0.05",cat:"技艺"},
+  122:{name:"毒手药王",value:4,effect:"医术+10;毒术+20;毒素+0.1",cat:"技艺"},
+  123:{name:"医毒",value:1,effect:"医术+5;毒术+3;自愈+1",cat:"技艺"},
+  124:{name:"强壮",value:1,effect:"力道+10;灵巧-5",cat:"天生"},
+  125:{name:"魁梧奇伟",value:2,effect:"力道+20;灵巧-10",cat:"天生"},
+  126:{name:"天生神力",value:4,effect:"力道+30;灵巧-15",cat:"天生"},
+  127:{name:"瘦弱",value:-1,effect:"力道-10;灵巧+5",cat:"天生"},
+  128:{name:"瘦骨嶙峋",value:-2,effect:"力道-20;灵巧+10",cat:"天生"},
+  129:{name:"缚鸡之力",value:-4,effect:"力道-30;灵巧+15",cat:"天生"},
+  130:{name:"机敏",value:1,effect:"灵巧+10;力道-5",cat:"天生"},
+  131:{name:"随机应变",value:2,effect:"灵巧+20;力道-10",cat:"天生"},
+  132:{name:"巧捷万端",value:4,effect:"灵巧+30;力道-15",cat:"天生"},
+  133:{name:"笨拙",value:-1,effect:"灵巧-10;力道+5",cat:"天生"},
+  134:{name:"笨手笨脚",value:-2,effect:"灵巧-20;力道+10",cat:"天生"},
+  135:{name:"东倒西歪",value:-4,effect:"灵巧-30;力道+15",cat:"天生"},
+  136:{name:"聪慧",value:1,effect:"智力+10;意志-5",cat:"天生"},
+  137:{name:"天资过人",value:2,effect:"智力+20;意志-10",cat:"天生"},
+  138:{name:"旷世奇才",value:4,effect:"智力+30;意志-15",cat:"天生"},
+  139:{name:"愚钝",value:-1,effect:"智力-10;意志+5",cat:"天生"},
+  140:{name:"傻头傻脑",value:-2,effect:"智力-20;意志+10",cat:"天生"},
+  141:{name:"痴傻蒙昧",value:-4,effect:"智力-30;意志+15",cat:"天生"},
+  142:{name:"勇敢",value:1,effect:"意志+10;智力-5",cat:"天生"},
+  143:{name:"身先士卒",value:2,effect:"意志+20;智力-10",cat:"天生"},
+  144:{name:"临危不乱",value:4,effect:"意志+30;智力-15",cat:"天生"},
+  145:{name:"懦弱",value:-1,effect:"意志-10;智力+5",cat:"天生"},
+  146:{name:"战战兢兢",value:-2,effect:"意志-20;智力+10",cat:"天生"},
+  147:{name:"胆小如鼠",value:-4,effect:"意志-30;智力+15",cat:"天生"},
+  148:{name:"康健",value:1,effect:"体质+10;经脉-5",cat:"天生"},
+  149:{name:"容光焕发",value:2,effect:"体质+20;经脉-10",cat:"天生"},
+  150:{name:"百病不侵",value:4,effect:"体质+30;经脉-15",cat:"天生"},
+  151:{name:"多病",value:-1,effect:"体质-10;经脉+5",cat:"天生"},
+  152:{name:"身心交病",value:-2,effect:"体质-20;经脉+10",cat:"天生"},
+  153:{name:"旧病沉疴",value:-4,effect:"体质-30;经脉+15",cat:"天生"},
+  154:{name:"顺脉",value:1,effect:"经脉+10;体质-5",cat:"天生"},
+  155:{name:"脉络贯通",value:2,effect:"经脉+20;体质-10",cat:"天生"},
+  156:{name:"先天气海",value:4,effect:"经脉+30;体质-15",cat:"天生"},
+  157:{name:"滞脉",value:-1,effect:"经脉-10;体质+5",cat:"天生"},
+  158:{name:"脉络阻塞",value:-2,effect:"经脉-20;体质+10",cat:"天生"},
+  159:{name:"经脉断绝",value:-4,effect:"经脉-30;体质+15",cat:"天生"},
+  160:{name:"正直",value:1,effect:"压制+0.1;暴击-0.05",cat:"天生"},
+  161:{name:"公正不阿",value:2,effect:"压制+0.2;暴击-0.1",cat:"天生"},
+  162:{name:"浩气凛然",value:4,effect:"压制+0.3;暴击-0.15",cat:"天生"},
+  163:{name:"阴险",value:-1,effect:"压制-0.1;暴击+0.05",cat:"天生"},
+  164:{name:"不择手段",value:-2,effect:"压制-0.2;暴击+0.1",cat:"天生"},
+  165:{name:"笑里藏刀",value:-4,effect:"压制-0.3;暴击+0.15",cat:"天生"},
+  166:{name:"仁慈",value:1,effect:"卸力+0.1;伤害-0.05",cat:"天生"},
+  167:{name:"宅心仁厚",value:2,effect:"卸力+0.2;伤害-0.1",cat:"天生"},
+  168:{name:"慈悲为怀",value:4,effect:"卸力+0.3;伤害-0.15",cat:"天生"},
+  169:{name:"残忍",value:-1,effect:"卸力-0.1;伤害+0.05",cat:"天生"},
+  170:{name:"心狠手辣",value:-2,effect:"卸力-0.2;伤害+0.1",cat:"天生"},
+  171:{name:"灭心绝情",value:-4,effect:"卸力-0.3;伤害+0.15",cat:"天生"},
+  172:{name:"冷静",value:1,effect:"闪避+0.1;连击-0.05",cat:"天生"},
+  173:{name:"气定神闲",value:2,effect:"闪避+0.2;连击-0.1",cat:"天生"},
+  174:{name:"心如止水",value:4,effect:"闪避+0.3;连击-0.15",cat:"天生"},
+  175:{name:"暴躁",value:-1,effect:"闪避-0.1;连击+0.05",cat:"天生"},
+  176:{name:"性烈如火",value:-2,effect:"闪避-0.2;连击+0.1",cat:"天生"},
+  177:{name:"怒发冲冠",value:-4,effect:"闪避-0.3;连击+0.15",cat:"天生"},
+  178:{name:"幸运",value:1,effect:"暴击+0.1;卸力-0.05",cat:"天生"},
+  179:{name:"福星高照",value:2,effect:"暴击+0.2;卸力-0.1",cat:"天生"},
+  180:{name:"吉人天相",value:4,effect:"暴击+0.3;卸力-0.15",cat:"天生"},
+  181:{name:"不幸",value:-1,effect:"暴击-0.1;卸力+0.05",cat:"天生"},
+  182:{name:"命途多舛",value:-2,effect:"暴击-0.2;卸力+0.1",cat:"天生"},
+  183:{name:"天煞孤星",value:-4,effect:"暴击-0.3;卸力+0.15",cat:"天生"},
+  184:{name:"美貌",value:1,effect:"好感获取+0.1;负面抗性-0.05",cat:"天生"},
+  185:{name:"明眸皓齿",value:2,effect:"好感获取+0.2;负面抗性-0.1",cat:"天生"},
+  186:{name:"倾国倾城",value:4,effect:"好感获取+0.3;负面抗性-0.15",cat:"天生"},
+  187:{name:"丑陋",value:-1,effect:"好感获取-0.1;负面抗性+0.05",cat:"天生"},
+  188:{name:"面目狰狞",value:-2,effect:"好感获取-0.2;负面抗性+0.1",cat:"天生"},
+  189:{name:"百丑千拙",value:-4,effect:"好感获取-0.3;负面抗性+0.15",cat:"天生"},
+  190:{name:"锐眼",value:1,effect:"命中+0.1;反击-0.05",cat:"天生"},
+  191:{name:"目光炯炯",value:2,effect:"命中+0.2;反击-0.1",cat:"天生"},
+  192:{name:"明察秋毫",value:4,effect:"命中+0.3;反击-0.15",cat:"天生"},
+  193:{name:"弱视",value:-1,effect:"命中-0.1;反击+0.05",cat:"天生"},
+  194:{name:"视线模糊",value:-2,effect:"命中-0.2;反击+0.1",cat:"天生"},
+  195:{name:"雾里看花",value:-4,effect:"命中-0.3;反击+0.15",cat:"天生"},
+  196:{name:"谦逊",value:1,effect:"反击+0.1;压制-0.05",cat:"天生"},
+  197:{name:"不骄不躁",value:2,effect:"反击+0.2;压制-0.1",cat:"天生"},
+  198:{name:"虚怀若谷",value:4,effect:"反击+0.3;压制-0.15",cat:"天生"},
+  199:{name:"刚愎",value:-1,effect:"反击-0.1;压制+0.05",cat:"天生"},
+  200:{name:"盛气凌人",value:-2,effect:"反击-0.2;压制+0.1",cat:"天生"},
+  201:{name:"唯我独尊",value:-4,effect:"反击-0.3;压制+0.15",cat:"天生"},
+  202:{name:"忠诚",value:1,effect:"恢复效率+0.1;闪避-0.05",cat:"天生"},
+  203:{name:"忠心耿耿",value:2,effect:"恢复效率+0.2;闪避-0.1",cat:"天生"},
+  204:{name:"至死不渝",value:4,effect:"恢复效率+0.3;闪避-0.15",cat:"天生"},
+  205:{name:"叛逆",value:-1,effect:"恢复效率-0.1;闪避+0.05",cat:"天生"},
+  206:{name:"桀骜不驯",value:-2,effect:"恢复效率-0.2;闪避+0.1",cat:"天生"},
+  207:{name:"离经叛道",value:-4,effect:"恢复效率-0.3;闪避+0.15",cat:"天生"},
+  208:{name:"勤奋",value:1,effect:"经验获取+0.1;负面抗性-0.05",cat:"天生"},
+  209:{name:"孜孜不倦",value:2,effect:"经验获取+0.2;负面抗性-0.1",cat:"天生"},
+  210:{name:"废寝忘食",value:4,effect:"经验获取+0.3;负面抗性-0.15",cat:"天生"},
+  211:{name:"懒惰",value:-1,effect:"经验获取-0.1;负面抗性+0.05",cat:"天生"},
+  212:{name:"游手好闲",value:-2,effect:"经验获取-0.2;负面抗性+0.1",cat:"天生"},
+  213:{name:"无所用心",value:-4,effect:"经验获取-0.3;负面抗性+0.15",cat:"天生"},
+  214:{name:"节俭",value:1,effect:"连击+0.1;恢复效率-0.05",cat:"天生"},
+  215:{name:"精打细算",value:2,effect:"连击+0.2;恢复效率-0.1",cat:"天生"},
+  216:{name:"取予有节",value:4,effect:"连击+0.3;恢复效率-0.15",cat:"天生"},
+  217:{name:"浪费",value:-1,effect:"连击-0.1;恢复效率+0.05",cat:"天生"},
+  218:{name:"挥霍无度",value:-2,effect:"连击-0.2;恢复效率+0.1",cat:"天生"},
+  219:{name:"穷奢极欲",value:-4,effect:"连击-0.3;恢复效率+0.15",cat:"天生"},
+  220:{name:"练武",value:1,effect:"实战经验+0.1;理论经验+0.1",cat:"志向"},
+  221:{name:"武痴",value:2,effect:"实战经验+0.2;理论经验+0.2",cat:"志向"},
+  222:{name:"武学天才",value:3,effect:"实战经验+0.3;理论经验+0.3",cat:"志向"},
+  223:{name:"学医",value:1,effect:"医术经验+0.2;毒术经验+0.2",cat:"志向"},
+  224:{name:"医师",value:2,effect:"医术经验+0.4;毒术经验+0.4",cat:"志向"},
+  225:{name:"济世神医",value:3,effect:"医术经验+0.6;毒术经验+0.6",cat:"志向"},
+  226:{name:"习文",value:1,effect:"学识经验+0.2;口才经验+0.2",cat:"志向"},
+  227:{name:"雅士",value:2,effect:"学识经验+0.4;口才经验+0.4",cat:"志向"},
+  228:{name:"文采斐然",value:3,effect:"学识经验+0.6;口才经验+0.6",cat:"志向"},
+  229:{name:"务农",value:1,effect:"采伐经验+0.2;木植经验+0.2",cat:"志向"},
+  230:{name:"农家",value:2,effect:"采伐经验+0.4;木植经验+0.4",cat:"志向"},
+  231:{name:"在世神农",value:3,effect:"采伐经验+0.6;木植经验+0.6",cat:"志向"},
+  232:{name:"学徒",value:1,effect:"锻造经验+0.2;炼药经验+0.2;烹饪经验+0.2",cat:"志向"},
+  233:{name:"工匠",value:2,effect:"锻造经验+0.4;炼药经验+0.4;烹饪经验+0.4",cat:"志向"},
+  234:{name:"能工巧匠",value:3,effect:"锻造经验+0.6;炼药经验+0.6;烹饪经验+0.6",cat:"志向"},
+  235:{name:"经商",value:1,effect:"买卖优势+0.05",cat:"志向"},
+  236:{name:"善贾",value:2,effect:"买卖优势+0.1",cat:"志向"},
+  237:{name:"囤积居奇",value:3,effect:"买卖优势+0.15",cat:"志向"},
+  238:{name:"从政",value:1,effect:"功绩获取+0.1;声望获取+0.1",cat:"志向"},
+  239:{name:"仕官",value:2,effect:"功绩获取+0.2;声望获取+0.2",cat:"志向"},
+  240:{name:"位极人臣",value:3,effect:"功绩获取+0.3;声望获取+0.3",cat:"志向"},
+  241:{name:"杂学",value:1,effect:"技艺经验+0.1",cat:"志向"},
+  242:{name:"通才",value:2,effect:"技艺经验+0.2",cat:"志向"},
+  243:{name:"博学多才",value:3,effect:"技艺经验+0.3",cat:"志向"},
+  244:{name:"淡泊",value:1,effect:"功绩获取-0.05;声望获取-0.05;负面抗性+0.05",cat:"志向"},
+  245:{name:"隐士",value:2,effect:"功绩获取-0.1;声望获取-0.1;负面抗性+0.1",cat:"志向"},
+  246:{name:"避世绝俗",value:3,effect:"功绩获取-0.15;声望获取-0.15;负面抗性+0.15",cat:"志向"},
+  247:{name:"儒术",value:1,effect:"经验获取+0.05",cat:"志向"},
+  248:{name:"儒生",value:2,effect:"经验获取+0.1",cat:"志向"},
+  249:{name:"鸿儒大学",value:3,effect:"经验获取+0.15",cat:"志向"},
+  250:{name:"修道",value:1,effect:"复生+0.05",cat:"志向"},
+  251:{name:"道士",value:2,effect:"复生+0.1",cat:"志向"},
+  252:{name:"仙风道骨",value:4,effect:"复生+0.15",cat:"志向"},
+  253:{name:"学佛",value:1,effect:"霸体+0.05",cat:"志向"},
+  254:{name:"禅师",value:2,effect:"霸体+0.1",cat:"志向"},
+  255:{name:"四大皆空",value:4,effect:"霸体+0.15",cat:"志向"},
+  256:{name:"行乞",value:1,effect:"横练+0.05",cat:"志向"},
+  257:{name:"化缘",value:2,effect:"横练+0.1",cat:"志向"},
+  258:{name:"游戏人间",value:4,effect:"横练+0.15",cat:"志向"},
+  259:{name:"卜算",value:1,effect:"闪避+0.05",cat:"志向"},
+  260:{name:"相士",value:2,effect:"闪避+0.1",cat:"志向"},
+  261:{name:"未卜先知",value:4,effect:"闪避+0.15",cat:"志向"},
+  262:{name:"游侠",value:1,effect:"飘逸+0.05",cat:"志向"},
+  263:{name:"侠客",value:2,effect:"飘逸+0.1",cat:"志向"},
+  264:{name:"侠义无双",value:4,effect:"飘逸+0.15",cat:"志向"},
+  265:{name:"赌徒",value:1,effect:"慧眼+0.05",cat:"喜好"},
+  266:{name:"嗜赌如命",value:2,effect:"慧眼+0.1",cat:"喜好"},
+  267:{name:"赌运亨通",value:4,effect:"慧眼+0.15",cat:"喜好"},
+  268:{name:"酒鬼",value:1,effect:"壮骨+0.05",cat:"喜好"},
+  269:{name:"放歌纵酒",value:2,effect:"壮骨+0.1",cat:"喜好"},
+  270:{name:"醉生梦死",value:4,effect:"壮骨+0.15",cat:"喜好"},
+  271:{name:"食客",value:1,effect:"活血+0.05",cat:"喜好"},
+  272:{name:"大快朵颐",value:2,effect:"活血+0.1",cat:"喜好"},
+  273:{name:"饕餮盛宴",value:4,effect:"活血+0.15",cat:"喜好"},
+  274:{name:"收藏",value:1,effect:"鹰眼+0.05",cat:"喜好"},
+  275:{name:"去伪存真",value:2,effect:"鹰眼+0.1",cat:"喜好"},
+  276:{name:"慧眼独具",value:4,effect:"鹰眼+0.15",cat:"喜好"},
+  277:{name:"骑术",value:1,effect:"急速+0.05",cat:"喜好"},
+  278:{name:"纵马驰骋",value:2,effect:"急速+0.1",cat:"喜好"},
+  279:{name:"一骑绝尘",value:4,effect:"急速+0.15",cat:"喜好"},
+  280:{name:"读书",value:1,effect:"定神+0.05",cat:"喜好"},
+  281:{name:"博览群书",value:2,effect:"定神+0.1",cat:"喜好"},
+  282:{name:"皓首穷经",value:4,effect:"定神+0.15",cat:"喜好"},
+  283:{name:"瑶琴",value:1,effect:"负面加成+0.05",cat:"喜好"},
+  284:{name:"余音绕梁",value:2,effect:"负面加成+0.1",cat:"喜好"},
+  285:{name:"鸾吟凤唱",value:4,effect:"负面加成+0.15",cat:"喜好"},
+  286:{name:"弈棋",value:1,effect:"破招+0.05",cat:"喜好"},
+  287:{name:"棋高一着",value:2,effect:"破招+0.1",cat:"喜好"},
+  288:{name:"神机妙算",value:4,effect:"破招+0.15",cat:"喜好"},
+  289:{name:"书法",value:1,effect:"通脉+0.05",cat:"喜好"},
+  290:{name:"笔走龙蛇",value:2,effect:"通脉+0.1",cat:"喜好"},
+  291:{name:"铁画银钩",value:4,effect:"通脉+0.15",cat:"喜好"},
+  292:{name:"绘画",value:1,effect:"连绵+0.05",cat:"喜好"},
+  293:{name:"丹青妙手",value:2,effect:"连绵+0.1",cat:"喜好"},
+  294:{name:"妙至毫巅",value:4,effect:"连绵+0.15",cat:"喜好"},
+  295:{name:"吟诗",value:1,effect:"醒脑+0.05",cat:"喜好"},
+  296:{name:"文思泉涌",value:2,effect:"醒脑+0.1",cat:"喜好"},
+  297:{name:"七步成诗",value:4,effect:"醒脑+0.15",cat:"喜好"},
+  298:{name:"狩猎",value:1,effect:"轻灵+0.05",cat:"喜好"},
+  299:{name:"飞鹰走犬",value:2,effect:"轻灵+0.1",cat:"喜好"},
+  300:{name:"苍鹰搏兔",value:4,effect:"轻灵+0.15",cat:"喜好"},
+  301:{name:"云游",value:1,effect:"旅行速度+0.1",cat:"喜好"},
+  302:{name:"游山玩水",value:2,effect:"旅行速度+0.2",cat:"喜好"},
+  303:{name:"浪迹天涯",value:4,effect:"旅行速度+0.3",cat:"喜好"},
+  304:{name:"静修",value:1,effect:"坚毅+0.05",cat:"喜好"},
+  305:{name:"蛰居偃伏",value:2,effect:"坚毅+0.1",cat:"喜好"},
+  306:{name:"面壁功深",value:4,effect:"坚毅+0.15",cat:"喜好"},
+  307:{name:"舞技",value:1,effect:"舒筋+0.05",cat:"喜好"},
+  308:{name:"舞态生风",value:2,effect:"舒筋+0.1",cat:"喜好"},
+  309:{name:"羽衣蹁跹",value:4,effect:"舒筋+0.15",cat:"喜好"},
+  310:{name:"随从",value:2,effect:"灵巧+2;体质+2",cat:"战法"},
+  311:{name:"唯命是从",value:4,effect:"灵巧+4;体质+4",cat:"战法"},
+  312:{name:"精明强干",value:6,effect:"灵巧+6;体质+6",cat:"战法"},
+  313:{name:"军师",value:2,effect:"智力+2;经脉+2",cat:"战法"},
+  314:{name:"排兵布阵",value:4,effect:"智力+4;经脉+4",cat:"战法"},
+  315:{name:"运筹帷幄",value:6,effect:"智力+6;经脉+6",cat:"战法"},
+  316:{name:"领袖",value:2,effect:"力道+2;意志+2",cat:"战法"},
+  317:{name:"胸怀大志",value:4,effect:"力道+4;意志+4",cat:"战法"},
+  318:{name:"雄才伟略",value:6,effect:"力道+6;意志+6",cat:"战法"},
+  319:{name:"先锋",value:1,effect:"伤害+0.04;卸力-0.02",cat:"战法"},
+  320:{name:"奋勇当先",value:2,effect:"伤害+0.08;卸力-0.04",cat:"战法"},
+  321:{name:"背水一战",value:4,effect:"伤害+0.12;卸力-0.06",cat:"战法"},
+  322:{name:"守备",value:1,effect:"卸力+0.04;速度-0.02",cat:"战法"},
+  323:{name:"戒备森严",value:2,effect:"卸力+0.08;速度-0.04",cat:"战法"},
+  324:{name:"严防死守",value:4,effect:"卸力+0.12;速度-0.06",cat:"战法"},
+  325:{name:"游斗",value:1,effect:"速度+0.04;伤害-0.02",cat:"战法"},
+  326:{name:"快步流星",value:2,effect:"速度+0.08;伤害-0.04",cat:"战法"},
+  327:{name:"千里奔袭",value:4,effect:"速度+0.12;伤害-0.06",cat:"战法"},
+  328:{name:"精力充沛",value:2,effect:"经验获取+0.2;旅行速度+0.1",cat:"特效"},
+  329:{name:"腊八粥",value:2,effect:"回血0.01;回内0.01",cat:"特效"},
+  330:{name:"微醺",value:1,effect:"伤害抗性+0.05;命中-0.05",cat:"特效"},
+  331:{name:"痛饮",value:2,effect:"伤害抗性+0.1;命中-0.1",cat:"特效"},
+  332:{name:"大醉",value:3,effect:"伤害抗性+0.15;命中-0.15",cat:"特效"},
+  333:{name:"酩酊",value:4,effect:"伤害抗性+0.2;命中-0.2",cat:"特效"},
+  334:{name:"宴会无趣",value:1,effect:"恢复效率+0.02;负面抗性+0.02",cat:"特效"},
+  335:{name:"宴会平平",value:2,effect:"恢复效率+0.04;负面抗性+0.04",cat:"特效"},
+  336:{name:"宴会满意",value:3,effect:"恢复效率+0.06;负面抗性+0.06",cat:"特效"},
+  337:{name:"宴会欢喜",value:4,effect:"恢复效率+0.08;负面抗性+0.08",cat:"特效"},
+  338:{name:"宴会极乐",value:5,effect:"恢复效率+0.1;负面抗性+0.1",cat:"特效"},
+  339:{name:"赌运",value:1,effect:"暴击+0.05",cat:"特效"},
+  340:{name:"霉运",value:-1,effect:"暴击-0.05",cat:"特效"},
+  341:{name:"论胜",value:2,effect:"理论经验+0.1;技艺经验+0.2",cat:"特效"},
+  342:{name:"论败",value:-2,effect:"理论经验-0.1;技艺经验-0.2",cat:"特效"},
+  343:{name:"轻症",value:-2,effect:"伤害-0.1;速度-0.1",cat:"特效"},
+  344:{name:"中症",value:-6,effect:"伤害-0.2;速度-0.2",cat:"特效"},
+  345:{name:"重症",value:-12,effect:"伤害-0.4;速度-0.4",cat:"特效"},
+  346:{name:"危症",value:-20,effect:"伤害-0.8;速度-0.8",cat:"特效"},
+  347:{name:"气息不调",value:-2,effect:"伤害-0.05;速度-0.05;经脉-10",cat:"特效"},
+  348:{name:"内息紊乱",value:-6,effect:"伤害-0.1;速度-0.1;经脉-20",cat:"特效"},
+  349:{name:"经脉受阻",value:-12,effect:"伤害-0.2;速度-0.2;经脉-40",cat:"特效"},
+  350:{name:"经脉断绝",value:-20,effect:"伤害-0.4;速度-0.4;经脉-80",cat:"特效"},
+  351:{name:"断臂",value:-10,effect:"伤害-0.4",cat:"特效"},
+  352:{name:"跛足",value:-10,effect:"速度-0.4",cat:"特效"},
+  353:{name:"目渺",value:-10,effect:"命中-0.4",cat:"特效"},
+  354:{name:"理论心得",value:1,effect:"实战经验+0.1",cat:"特效"},
+  355:{name:"实战心得",value:1,effect:"理论经验+0.1",cat:"特效"},
+  356:{name:"机关木臂",value:1,effect:"机关伤害+0.1",cat:"武学"},
+  357:{name:"机关石臂",value:2,effect:"机关伤害+0.2",cat:"武学"},
+  358:{name:"机关铁臂",value:4,effect:"机关伤害+0.3",cat:"武学"},
+  359:{name:"机关木轮",value:1,effect:"机关速度+0.1",cat:"武学"},
+  360:{name:"机关石轮",value:2,effect:"机关速度+0.2",cat:"武学"},
+  361:{name:"机关铁轮",value:4,effect:"机关速度+0.3",cat:"武学"},
+  362:{name:"机关木甲",value:1,effect:"机关耐久+0.1",cat:"武学"},
+  363:{name:"机关石甲",value:2,effect:"机关耐久+0.2",cat:"武学"},
+  364:{name:"机关铁甲",value:4,effect:"机关耐久+0.3",cat:"武学"},
+  365:{name:"机关大师",value:7,effect:"机关伤害+0.2;机关速度+0.2;机关耐久+0.2",cat:"高级"},
+  366:{name:"鲁班在世",value:10,effect:"机关伤害+0.4;机关速度+0.4;机关耐久+0.4",cat:"高级"},
+  367:{name:"机关义手",value:-2,effect:"伤害-0.2;连击+0.05;暴击+0.05",cat:"特效"},
+  368:{name:"手铐",value:-12,effect:"伤害-0.5",cat:"特效"},
+  369:{name:"脚镣",value:-12,effect:"速度-0.5",cat:"特效"},
+  370:{name:"机关义手",value:-1,effect:"伤害-0.15;连击+0.05;暴击+0.05",cat:"特效"},
+  371:{name:"机关义手",value:1,effect:"伤害-0.1;连击+0.05;暴击+0.05",cat:"特效"},
+  372:{name:"机关义手",value:2,effect:"伤害-0.05;连击+0.05;暴击+0.05",cat:"特效"},
+  373:{name:"机关义手",value:4,effect:"伤害-0.05;连击+0.1;暴击+0.1",cat:"特效"},
+  374:{name:"登顶泰岳",value:10,effect:"力道+2;灵巧+2;智力+2;意志+2;体质+2;经脉+2;内功+2;轻功+2;绝技+2;拳掌+2;剑法+2;刀法+2;长兵+2;奇门+2;射术+2",cat:"特效"},
+  375:{name:"负心人",value:-3,effect:"好感获取-0.3",cat:"特效"},
+  376:{name:"修行心得",value:3,effect:"实战经验+0.2;理论经验+0.2;技艺经验+0.2",cat:"特效"},
+  377:{name:"刮骨疗毒",value:2,effect:"医术+10;毒术+5;自愈+3",cat:"技艺"},
+  378:{name:"百毒不侵",value:4,effect:"医术+20;毒术+10;自愈+6",cat:"技艺"},
+  379:{name:"天下第一",value:8,effect:"内功+5;轻功+5;绝技+5;拳掌+5;剑法+5;刀法+5;长兵+5;奇门+5;射术+5",cat:"特效"},
+  380:{name:"归隐田园",value:7,effect:"医术+10;毒术+10;学识+10;口才+10;采伐+10;木植+10;锻造+10;炼药+10;烹饪+10",cat:"特效"},
+  381:{name:"豪商巨贾",value:6,effect:"买卖优势+0.2",cat:"特效"},
+  382:{name:"功成名就",value:4,effect:"功绩获取+0.2",cat:"特效"},
+  383:{name:"禁军统领",value:5,effect:"经验获取+0.2",cat:"特效"},
+  384:{name:"权势滔天",value:4,effect:"声望获取+0.2",cat:"特效"},
+  385:{name:"名门大派",value:6,effect:"本门武学威力+0.2",cat:"特效"},
+  386:{name:"武林盟主",value:7,effect:"力道+5;灵巧+5;智力+5;意志+5;体质+5;经脉+5",cat:"特效"},
+  387:{name:"终归一统",value:10,effect:"力道+3;灵巧+3;智力+3;意志+3;体质+3;经脉+3;内功+3;轻功+3;绝技+3;拳掌+3;剑法+3;刀法+3;长兵+3;奇门+3;射术+3;医术+5;毒术+5;学识+5;口才+5;采伐+5;木植+5;锻造+5;炼药+5;烹饪+5",cat:"特效"},
+  388:{name:"鸾凤和鸣",value:5,effect:"好感获取+0.2",cat:"特效"},
+  389:{name:"终生监禁",value:6,effect:"恶名减少+0.1",cat:"特效"},
+  390:{name:"背叛师门",value:-4,effect:"声望获取-0.3;好感获取-0.1",cat:"特效"},
+};
+
+GameData.TECH_DATA = {
+  0:{name:"开宗立派",cat:0,bonus:"区域上限",val:1,fixed:"TRUE",diff:4,res:"银钱"},
+  1:{name:"人力管理",cat:0,bonus:"弟子上限",val:2,fixed:"FALSE",diff:2,res:"粮食"},
+  2:{name:"仓储管理",cat:0,bonus:"仓储容量",val:1,fixed:"TRUE",diff:1,res:"粮食"},
+  3:{name:"疗伤管理",cat:0,bonus:"疗伤效率",val:0.01,fixed:"FALSE",diff:1,res:"药材"},
+  4:{name:"恢复管理",cat:0,bonus:"恢复效率",val:0.02,fixed:"FALSE",diff:1,res:"药材"},
+  5:{name:"建造管理",cat:0,bonus:"建造速度",val:0.02,fixed:"FALSE",diff:1,res:"银钱"},
+  6:{name:"旅行管理",cat:0,bonus:"旅行速度",val:0.01,fixed:"FALSE",diff:1,res:"银钱"},
+  7:{name:"生产管理",cat:0,bonus:"资源点产量",val:0.01,fixed:"FALSE",diff:1,res:"粮食"},
+  8:{name:"功绩管理",cat:0,bonus:"弟子功绩",val:0.02,fixed:"FALSE",diff:1,res:"威望"},
+  9:{name:"科研管理",cat:0,bonus:"科研效率",val:0.04,fixed:"FALSE",diff:1,res:"银钱"},
+  10:{name:"基础训练",cat:1,bonus:"实战经验",val:0.01,fixed:"FALSE",diff:2,res:"银钱"},
+  11:{name:"文书管理",cat:1,bonus:"理论经验",val:0.01,fixed:"FALSE",diff:2,res:"银钱"},
+  12:{name:"内功纲要",cat:1,bonus:"内功经验",val:0.02,fixed:"FALSE",diff:1,res:"银钱"},
+  13:{name:"轻功纲要",cat:1,bonus:"轻功经验",val:0.02,fixed:"FALSE",diff:1,res:"银钱"},
+  14:{name:"绝技纲要",cat:1,bonus:"绝技经验",val:0.02,fixed:"FALSE",diff:1,res:"银钱"},
+  15:{name:"拳掌纲要",cat:1,bonus:"拳掌经验",val:0.02,fixed:"FALSE",diff:1,res:"银钱"},
+  16:{name:"剑法纲要",cat:1,bonus:"剑法经验",val:0.02,fixed:"FALSE",diff:1,res:"银钱"},
+  17:{name:"刀法纲要",cat:1,bonus:"刀法经验",val:0.02,fixed:"FALSE",diff:1,res:"银钱"},
+  18:{name:"长兵纲要",cat:1,bonus:"长兵经验",val:0.02,fixed:"FALSE",diff:1,res:"银钱"},
+  19:{name:"奇门纲要",cat:1,bonus:"奇门经验",val:0.02,fixed:"FALSE",diff:1,res:"银钱"},
+  20:{name:"射术纲要",cat:1,bonus:"射术经验",val:0.02,fixed:"FALSE",diff:1,res:"银钱"},
+  21:{name:"日常修习",cat:2,bonus:"技艺经验",val:0.01,fixed:"FALSE",diff:3,res:"银钱"},
+  22:{name:"医术纲要",cat:2,bonus:"医术经验",val:0.02,fixed:"FALSE",diff:1,res:"药材"},
+  23:{name:"毒术纲要",cat:2,bonus:"毒术经验",val:0.02,fixed:"FALSE",diff:1,res:"药材"},
+  24:{name:"学识纲要",cat:2,bonus:"学识经验",val:0.02,fixed:"FALSE",diff:1,res:"银钱"},
+  25:{name:"口才纲要",cat:2,bonus:"口才经验",val:0.02,fixed:"FALSE",diff:1,res:"银钱"},
+  26:{name:"采伐纲要",cat:2,bonus:"采伐经验",val:0.02,fixed:"FALSE",diff:1,res:"粮食"},
+  27:{name:"木植纲要",cat:2,bonus:"木植经验",val:0.02,fixed:"FALSE",diff:1,res:"木料"},
+  28:{name:"锻造纲要",cat:2,bonus:"锻造经验",val:0.02,fixed:"FALSE",diff:1,res:"矿石"},
+  29:{name:"炼药纲要",cat:2,bonus:"炼药经验",val:0.02,fixed:"FALSE",diff:1,res:"药材"},
+  30:{name:"烹饪纲要",cat:2,bonus:"烹饪经验",val:0.02,fixed:"FALSE",diff:1,res:"粮食"},
+  31:{name:"力道训练",cat:3,bonus:"全员力道",val:1,fixed:"TRUE",diff:3,res:"银钱"},
+  32:{name:"灵巧训练",cat:3,bonus:"全员灵巧",val:1,fixed:"TRUE",diff:3,res:"银钱"},
+  33:{name:"智力训练",cat:3,bonus:"全员智力",val:1,fixed:"TRUE",diff:3,res:"银钱"},
+  34:{name:"意志训练",cat:3,bonus:"全员意志",val:1,fixed:"TRUE",diff:3,res:"银钱"},
+  35:{name:"体质训练",cat:3,bonus:"全员体质",val:1,fixed:"TRUE",diff:3,res:"银钱"},
+  36:{name:"经脉训练",cat:3,bonus:"全员经脉",val:1,fixed:"TRUE",diff:3,res:"银钱"},
+  37:{name:"内功训练",cat:3,bonus:"全员内功",val:1,fixed:"TRUE",diff:2,res:"银钱"},
+  38:{name:"轻功训练",cat:3,bonus:"全员轻功",val:1,fixed:"TRUE",diff:2,res:"银钱"},
+  39:{name:"绝技训练",cat:3,bonus:"全员绝技",val:1,fixed:"TRUE",diff:2,res:"银钱"},
+  40:{name:"拳掌训练",cat:3,bonus:"全员拳掌",val:1,fixed:"TRUE",diff:2,res:"银钱"},
+  41:{name:"剑法训练",cat:3,bonus:"全员剑法",val:1,fixed:"TRUE",diff:2,res:"银钱"},
+  42:{name:"刀法训练",cat:3,bonus:"全员刀法",val:1,fixed:"TRUE",diff:2,res:"银钱"},
+  43:{name:"长兵训练",cat:3,bonus:"全员长兵",val:1,fixed:"TRUE",diff:2,res:"银钱"},
+  44:{name:"奇门训练",cat:3,bonus:"全员奇门",val:1,fixed:"TRUE",diff:2,res:"银钱"},
+  45:{name:"射术训练",cat:3,bonus:"全员射术",val:1,fixed:"TRUE",diff:2,res:"银钱"},
+  46:{name:"医术训练",cat:3,bonus:"全员医术",val:1,fixed:"TRUE",diff:1,res:"药材"},
+  47:{name:"毒术训练",cat:3,bonus:"全员毒术",val:1,fixed:"TRUE",diff:1,res:"药材"},
+  48:{name:"学识训练",cat:3,bonus:"全员学识",val:1,fixed:"TRUE",diff:1,res:"银钱"},
+  49:{name:"口才训练",cat:3,bonus:"全员口才",val:1,fixed:"TRUE",diff:1,res:"银钱"},
+  50:{name:"采伐训练",cat:3,bonus:"全员采伐",val:1,fixed:"TRUE",diff:1,res:"粮食"},
+  51:{name:"木植训练",cat:3,bonus:"全员木植",val:1,fixed:"TRUE",diff:1,res:"木料"},
+  52:{name:"锻造训练",cat:3,bonus:"全员锻造",val:1,fixed:"TRUE",diff:1,res:"矿石"},
+  53:{name:"炼药训练",cat:3,bonus:"全员炼药",val:1,fixed:"TRUE",diff:1,res:"药材"},
+  54:{name:"烹饪训练",cat:3,bonus:"全员烹饪",val:1,fixed:"TRUE",diff:1,res:"粮食"},
+  55:{name:"巡逻治安",cat:0,bonus:"全域治安",val:1,fixed:"TRUE",diff:4,res:"银钱"},
+  56:{name:"赈济民心",cat:0,bonus:"全域民心",val:1,fixed:"TRUE",diff:4,res:"银钱"},
+  57:{name:"稳固防御",cat:0,bonus:"全域防御",val:1,fixed:"TRUE",diff:4,res:"银钱"},
+  58:{name:"户籍人口",cat:0,bonus:"全域人口",val:5,fixed:"TRUE",diff:4,res:"粮食"},
+  59:{name:"未知科研59",cat:0,bonus:"未知",val:0,fixed:"FALSE",diff:1,res:"银钱"},
+  69:{name:"城防工事",cat:0,bonus:"城防耐久",val:0.02,fixed:"FALSE",diff:1,res:"木料"},
+};
+
+GameData.SKIN_DATA = {
+  "-10":{name:"邪道服",effect:"伤害0.02"},
+  "-9":{name:"杀手服",effect:"速度0.02"},
+  "-8":{name:"强盗服",effect:"暴击0.02"},
+  "-7":{name:"游侠服",effect:"命中0.02"},
+  "-6":{name:"才子服",effect:"学识4"},
+  "-5":{name:"官差服",effect:"压制0.02"},
+  "-4":{name:"杂役服",effect:"采伐4"},
+  "-3":{name:"商人服",effect:"口才4"},
+  "-2":{name:"农民服",effect:"木植4"},
+  "-1":{name:"常服",effect:"经验获取0.02"},
+  "0":{name:"锦袍",effect:"意志2"},
+  "1":{name:"夜行衣",effect:"射术2"},
+  "2":{name:"医袍",effect:"医术4"},
+  "3":{name:"百衲衣",effect:"拳掌2"},
+  "4":{name:"戎装",effect:"长兵2"},
+  "5":{name:"法服",effect:"智力2"},
+  "6":{name:"甲胄",effect:"护甲1"},
+  "7":{name:"避毒服",effect:"毒术4"},
+  "8":{name:"铁衣",effect:"力道2"},
+  "9":{name:"襕衫",effect:"闪避0.02"},
+  "10":{name:"袈裟",effect:"体质2"},
+  "11":{name:"道袍",effect:"内功2"},
+  "12":{name:"胡裘",effect:"刀法2"},
+  "13":{name:"鹤氅",effect:"剑法2"},
+  "14":{name:"瑶衣",effect:"轻功2"},
+  "15":{name:"奇装",effect:"奇门2"},
+  "16":{name:"匠服",effect:"灵巧2"},
+  "17":{name:"火浣布",effect:"锻造4"},
+  "18":{name:"羌姆袍",effect:"绝技2"},
+  "19":{name:"貂裘",effect:"经脉2"},
+  "-100":{name:"白马红妆",effect:"伤害0.02"},
+  "-101":{name:"风起青萍",effect:"速度0.02"},
+};
+
 // === Embedded skills_data.json ===
 window.__EMBEDDED_SKILLS_DATA__ = 
 [
@@ -56211,6 +56736,83 @@ let SKILL_MAP = {}; // from GameData
 let SKILL_FORCE_MAP = {};
 let SKILL_DESC_MAP = {};
 let SKILLS_DATA = [];
+let SKILLS_BY_ID = {}; // quick lookup by skill ID
+
+// Stat name -> speAdd ID mapping (from SpeAddDataBase)
+const STAT_NAME_TO_ID = {
+  '力道':0,'灵巧':1,'智力':2,'意志':3,'体质':4,'经脉':5,'内功':6,'轻功':7,'绝技':8,
+  '拳掌':9,'剑法':10,'刀法':11,'长兵':12,'奇门':13,'射术':14,
+  '内功威力':15,'轻功威力':16,'绝技威力':17,'拳掌威力':18,'剑法威力':19,'刀法威力':20,'长兵威力':21,'奇门威力':22,'射术威力':23,
+  '医术':24,'毒术':25,'学识':26,'口才':27,'采伐':28,'木植':29,'锻造':30,'炼药':31,'烹饪':32,
+  '力道潜力':33,'灵巧潜力':34,'智力潜力':35,'意志潜力':36,'体质潜力':37,'经脉潜力':38,
+  '内功潜力':39,'轻功潜力':40,'绝技潜力':41,'拳掌潜力':42,'剑法潜力':43,'刀法潜力':44,'长兵潜力':45,'奇门潜力':46,'射术潜力':47,
+  '生命上限':57,'体力上限':58,'内力上限':59,
+  '伤害':60,'护甲':61,'护甲率':62,'速度':63,'命中':64,'闪避':65,'暴击':66,'卸力':67,
+  '反击':68,'压制':69,'连击':70,'断连':71,'恢复':86,'灼烧':87,'疗伤':88,'流血':89,
+  '通脉':127,'截脉':128,'蓄力':92,'疲劳':93,'外伤':80,'内伤':81,'毒素':82,
+  '吸血':83,'吸内':84,'削内':85,'目盲':108,'眩晕':96,'冰寒':94,
+  '回血':152,'回内':153,'回体':154,'减伤':164,'击退':133,'拉近':134,
+  '经验获取':72,'恢复效率':73,'负面加成':75,'负面抗性':76,'伤势抗性':77,
+  '失衡':78,'急速':79,'死战':115,'穿甲':116,'破招':169,'拆招':170,
+  '壮骨':117,'断骨':118,'舒筋':119,'伤筋':120,'醒脑':121,'震脑':122,
+  '定神':123,'乱神':124,'活血':125,'凝血':126,'霸体':111,'弱点':112,
+  '横练':103,'破甲':104,'轻灵':105,'迟缓':106,'鹰眼':107,'飘逸':109,'笨拙':110,
+  '慧眼':135,'昏沉':136,'铜皮':137,'脆弱':138,'不屈':139,'重碾':140,
+  '连绵':141,'断腕':142,'断招':143,'阻滞':144,'杀机':145,'康复':146,'不愈':147,
+  '坚毅':148,'动摇':149,'虚弱':102,'无敌':95,'疯魔':113,'混乱':114,
+  '复生':129,'反伤':130,'斗转':171,'神行':167,'裂膝':168,'定身':165,
+  '内劲':150,'真伤':151,'自愈':155
+};
+
+// Parse effect string like "内功1;经脉1" or "生命上限20;内力上限20" into {statId: value}
+function parseEffectStr(str) {
+  if (!str) return {};
+  const result = {};
+  str.split(';').forEach(part => {
+    part = part.trim();
+    if (!part) return;
+    // Match name + number, e.g. "内功1" or "生命上限20" or "伤害0.04"
+    const m = part.match(/^(.+?)([\d.]+)$/);
+    if (m) {
+      const name = m[1].trim();
+      const val = parseFloat(m[2]);
+      const id = STAT_NAME_TO_ID[name];
+      if (id !== undefined && !isNaN(val)) result[id] = val;
+    }
+  });
+  return result;
+}
+
+// Build skill speEquipData and speUseData from skills_data.json for a given level
+function buildSkillEffects(skillID, lv) {
+  const skData = SKILLS_BY_ID[skillID];
+  if (!skData) return { speEquipData: {}, speUseData: {}, basePower: 0 };
+
+  // 运功效果 -> speEquipData: value × statMultiplier × (1 + lv × 0.1)
+  const equipEffects = parseEffectStr(skData['运功效果']);
+  // 使用特效 -> speUseData: value × (1 + lv × 0.1)
+  const useEffects = parseEffectStr(skData['使用特效']);
+
+  // Stat multipliers (内力上限 has 2× multiplier)
+  const STAT_MULT = { '59': 2 };
+  const lvMult = 1 + lv * 0.1;
+
+  const speEquip = {};
+  for (const [id, val] of Object.entries(equipEffects)) {
+    const mult = STAT_MULT[id] || 1;
+    speEquip[id] = Math.round(val * mult * lvMult * 10000) / 10000;
+  }
+
+  const speUse = {};
+  for (const [id, val] of Object.entries(useEffects)) {
+    speUse[id] = Math.round(val * lvMult * 10000) / 10000;
+  }
+
+  const basePower = skData['基础威力'] || 0;
+  const dmg = basePower > 0 ? Math.round(basePower * lvMult * 10) / 10 : 0;
+
+  return { speEquipData: speEquip, speUseData: speUse, basePower: dmg };
+}
 
 function initSkillMap() {
   if (typeof GameData !== 'undefined' && GameData.SKILL_ID_TO_NAME) {
@@ -56222,6 +56824,7 @@ function initSkillMap() {
     data.forEach(sk => {
       SKILL_FORCE_MAP[sk.id] = sk['所属势力'] || '江湖';
       if (sk['描述']) SKILL_DESC_MAP[sk.id] = sk['描述'];
+      SKILLS_BY_ID[sk.id] = sk;
     });
     console.log('[SkillData] Loaded', data.length, 'skills from skills_data.json');
   }).catch(e => console.warn('[SkillData] Failed:', e.message));
@@ -56290,42 +56893,58 @@ function getTagColor(id) {
 }
 
 // ===== FILE I/O =====
+const useNativeFS = (typeof window.showDirectoryPicker === 'function');
+
 async function loadFolder() {
-  try {
-    console.log('[Load] Opening directory picker...');
-    dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
-    console.log('[Load] Directory selected:', dirHandle.name);
-
-    // List all files in the directory
-    console.log('[Load] Listing directory contents:');
-    for await (const entry of dirHandle.values()) {
-      console.log(`  [${entry.kind}] ${entry.name}`);
+  if (useNativeFS) {
+    try {
+      dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      await readSaveFilesNative();
+      toast('存档加载成功');
+    } catch(e) {
+      if (e.name !== 'AbortError') toast('加载失败: ' + e.message, true);
     }
+  } else {
+    // Fallback: use file input with webkitdirectory
+    document.getElementById('folderInput').click();
+  }
+}
 
-    await readSaveFiles();
-    toast('存档加载成功');
+async function loadFromFileInput(files) {
+  if (!files || !files.length) return;
+  dirHandle = null; // no native FS
+  const fileMap = {};
+  for (const f of files) {
+    // webkitdirectory gives paths like "SaveSlot1/Hero"
+    const name = f.name;
+    fileMap[name] = f;
+  }
+  try {
+    const readF = async (name) => {
+      const f = fileMap[name];
+      if (!f) throw new Error(`文件 ${name} 不存在`);
+      return await f.text();
+    };
+    saveData.info = JSON.parse(await readF('Info'));
+    saveData.heroes = JSON.parse(await readF('Hero'));
+    saveData.tempHeroes = JSON.parse(await readF('TempHero'));
+    saveData.save = JSON.parse(await readF('Save'));
+
+    document.getElementById('saveInfo').textContent =
+      `${saveData.info.SaveDetail.replace(/\n/g,' | ').replace(/<[^>]*>/g,'')} — ${saveData.info.SaveTime}`;
+    selectedIndex = 0;
+    renderSidebar();
+    renderContent();
+    toast('存档加载成功 (文件模式)');
   } catch(e) {
-    console.error('[Load] FAILED:', e);
-    console.error('[Load] Error name:', e.name, 'message:', e.message);
-    console.error('[Load] Stack:', e.stack);
-    if (e.name !== 'AbortError') toast('加载失败: ' + e.message, true);
+    toast('加载失败: ' + e.message, true);
   }
 }
 
 async function readFile(name) {
-  try {
-    console.log(`[ReadFile] Getting handle for: "${name}"`);
-    const fh = await dirHandle.getFileHandle(name);
-    console.log(`[ReadFile] Got handle, reading file: "${name}"`);
-    const file = await fh.getFile();
-    console.log(`[ReadFile] File "${name}" size: ${file.size} bytes, type: "${file.type}"`);
-    const text = await file.text();
-    console.log(`[ReadFile] File "${name}" text length: ${text.length}, first 200 chars:`, text.substring(0, 200));
-    return text;
-  } catch(e) {
-    console.error(`[ReadFile] FAILED to read "${name}":`, e);
-    throw e;
-  }
+  const fh = await dirHandle.getFileHandle(name);
+  const file = await fh.getFile();
+  return await file.text();
 }
 
 async function writeFile(name, content) {
@@ -56335,55 +56954,14 @@ async function writeFile(name, content) {
   await wr.close();
 }
 
-async function readSaveFiles() {
-  try {
-    console.log('[Parse] Reading Info...');
-    const infoText = await readFile('Info');
-    saveData.info = JSON.parse(infoText);
-    console.log('[Parse] Info parsed OK:', saveData.info);
-  } catch(e) {
-    console.error('[Parse] FAILED to parse Info:', e);
-    throw new Error('Info 文件解析失败: ' + e.message);
-  }
-
-  try {
-    console.log('[Parse] Reading Hero...');
-    const heroText = await readFile('Hero');
-    saveData.heroes = JSON.parse(heroText);
-    console.log('[Parse] Hero parsed OK, count:', saveData.heroes.length);
-  } catch(e) {
-    console.error('[Parse] FAILED to parse Hero:', e);
-    throw new Error('Hero 文件解析失败: ' + e.message);
-  }
-
-  try {
-    console.log('[Parse] Reading TempHero...');
-    const tempText = await readFile('TempHero');
-    saveData.tempHeroes = JSON.parse(tempText);
-    console.log('[Parse] TempHero parsed OK, count:', saveData.tempHeroes.length);
-  } catch(e) {
-    console.error('[Parse] FAILED to parse TempHero:', e);
-    throw new Error('TempHero 文件解析失败: ' + e.message);
-  }
-
-  try {
-    console.log('[Parse] Reading Save...');
-    const saveText = await readFile('Save');
-    saveData.save = JSON.parse(saveText);
-    console.log('[Parse] Save parsed OK, areas count:', saveData.save.Areas?.length);
-  } catch(e) {
-    console.error('[Parse] FAILED to parse Save:', e);
-    throw new Error('Save 文件解析失败: ' + e.message);
-  }
-
-  console.log('[Parse] All files loaded successfully');
-  console.log(`[Parse] Heroes: ${saveData.heroes.length} (${saveData.heroes.filter(h=>h!==null).length} non-null)`);
-  console.log(`[Parse] TempHeroes: ${saveData.tempHeroes.length} (${saveData.tempHeroes.filter(h=>h!==null).length} non-null)`);
-  console.log(`[Parse] Areas: ${saveData.save.Areas?.length}`);
+async function readSaveFilesNative() {
+  saveData.info = JSON.parse(await readFile('Info'));
+  saveData.heroes = JSON.parse(await readFile('Hero'));
+  saveData.tempHeroes = JSON.parse(await readFile('TempHero'));
+  saveData.save = JSON.parse(await readFile('Save'));
 
   document.getElementById('saveInfo').textContent =
     `${saveData.info.SaveDetail.replace(/\n/g,' | ').replace(/<[^>]*>/g,'')} — ${saveData.info.SaveTime}`;
-
   selectedIndex = 0;
   renderSidebar();
   renderContent();
@@ -56405,22 +56983,41 @@ async function backupFiles() {
       await wr.write(content);
       await wr.close();
       backed++;
-    } catch(e) { /* file might not exist yet, skip */ }
+    } catch(e) {}
   }
   return { backed, timestamp };
 }
 
+function downloadFile(name, content) {
+  const blob = new Blob([content], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 async function saveAll() {
-  if (!dirHandle) { toast('请先加载存档', true); return; }
-  try {
-    const { backed, timestamp } = await backupFiles();
-    console.log(`[Backup] ${backed} files backed up to backup/ with timestamp ${timestamp}`);
-    await writeFile('Hero', JSON.stringify(saveData.heroes));
-    await writeFile('TempHero', JSON.stringify(saveData.tempHeroes));
-    await writeFile('Save', JSON.stringify(saveData.save));
-    await writeFile('Info', JSON.stringify(saveData.info));
-    toast(`存档保存成功 (已备份 ${backed} 个文件 → backup/${timestamp})`);
-  } catch(e) { toast('保存失败: ' + e.message, true); }
+  if (!saveData.save) { toast('请先加载存档', true); return; }
+
+  if (dirHandle && useNativeFS) {
+    // Native FS: backup then write
+    try {
+      const { backed, timestamp } = await backupFiles();
+      await writeFile('Hero', JSON.stringify(saveData.heroes));
+      await writeFile('TempHero', JSON.stringify(saveData.tempHeroes));
+      await writeFile('Save', JSON.stringify(saveData.save));
+      await writeFile('Info', JSON.stringify(saveData.info));
+      toast(`存档保存成功 (已备份 ${backed} 个文件 → backup/${timestamp})`);
+    } catch(e) { toast('保存失败: ' + e.message, true); }
+  } else {
+    // Fallback: download each file
+    downloadFile('Hero', JSON.stringify(saveData.heroes));
+    downloadFile('TempHero', JSON.stringify(saveData.tempHeroes));
+    downloadFile('Save', JSON.stringify(saveData.save));
+    downloadFile('Info', JSON.stringify(saveData.info));
+    toast('已下载 4 个存档文件，请将它们复制到存档文件夹中覆盖原文件');
+  }
 }
 
 // ===== TABS =====
@@ -56549,7 +57146,7 @@ function heroPath(src) { return `saveData.${src}[${selectedIndex}]`; }
 
 function renderHeroBasic(h, src) {
   const p = heroPath(src);
-  return `
+  let html = `
   <div class="card"><div class="card-title">基本信息</div>
     <div class="field-grid">
       ${field('姓名', 'text', h.heroName, `${p}.heroName`)}
@@ -56566,8 +57163,27 @@ function renderHeroBasic(h, src) {
       ${field('已故', 'select', h.dead, `${p}.dead`, [{v:false,l:'否'},{v:true,l:'是'}])}
       ${field('隐藏', 'select', h.hide, `${p}.hide`, [{v:false,l:'否'},{v:true,l:'是'}])}
     </div>
-  </div>
-  <div class="card"><div class="card-title">状态</div>
+  </div>`;
+
+  // Skin card
+  const skinData = (typeof GameData !== 'undefined' && GameData.SKIN_DATA) ? GameData.SKIN_DATA : {};
+  const skinOpts = [];
+  try {
+    Object.entries(skinData).forEach(([id, s]) => {
+      skinOpts.push({v:parseInt(id), l:s.name + ' (' + s.effect + ')'});
+    });
+    skinOpts.sort((a,b) => a.v - b.v);
+  } catch(e) { console.error('skinOpts error:', e); }
+  html += '<div class="card"><div class="card-title">装束</div><div class="field-grid">';
+  html += fieldSelect('装束', h.skinID, p+'.skinID', skinOpts);
+  html += field('装束等级', 'number', h.skinLv, p+'.skinLv');
+  html += field('默认装束', 'number', h.defaultSkinID, p+'.defaultSkinID');
+  html += '</div>';
+  const curSkin = skinData[String(h.skinID)];
+  if (curSkin) html += '<div style="font-size:12px;color:#888;margin-top:6px">当前效果: <span style="color:#2ecc71">' + curSkin.effect + '</span></div>';
+  html += '</div>';
+
+  html += `<div class="card"><div class="card-title">状态</div>
     <div class="field-grid">
       ${field('生命', 'number', r2(h.hp), `${p}.hp`)}
       ${field('最大生命', 'number', r2(h.maxhp), `${p}.maxhp`)}
@@ -56594,7 +57210,9 @@ function renderHeroBasic(h, src) {
       ${field('银两', 'number', h.itemListData?.money||0, `${p}.itemListData.money`)}
       ${h.isGovern ? fieldSelect('官职', h.governLv, `${p}.governLv`, Object.entries(GOVERN_LV_NAMES).map(([k,v])=>({v:parseInt(k),l:v}))) : ''}
     </div>
-  </div>` + (h.heroID === 0 ? renderPlayerForceContribution() : '');
+  </div>`;
+  if (h.heroID === 0) html += renderPlayerForceContribution();
+  return html;
 }
 
 function renderHeroAttri(h, src) {
@@ -56684,26 +57302,40 @@ function isBuffTag(id) {
 function renderHeroTags(h, src) {
   const p = heroPath(src);
   const tags = h.heroTagData || [];
+  const GD_T = (typeof GameData !== 'undefined') ? GameData : {};
+  const TAG_DB = GD_T.HERO_TAG_DATA || {};
   const talentTags = tags.filter(t => !isBuffTag(t.tagID));
   const buffTags = tags.filter(t => isBuffTag(t.tagID));
 
   let html = `<div class="card"><div class="card-title">天赋 (${talentTags.length}) — 总点数: <input type="number" step="any" value="${r2(h.heroTagPoint || 0)}" style="width:80px;padding:2px 6px;background:#1a1a2e;border:1px solid #333;color:#e94560;border-radius:3px;font-size:14px" onchange="setVal('${p}.heroTagPoint',parseFloat(this.value)||0)"></div>`;
 
-  // Add talent
-  html += `<div class="tag-add-row">
-    <select id="addTagSelect">
-      <option value="">— 选择天赋 —</option>`;
-  const talentIds = Object.keys(TAG_NAMES).map(Number).filter(id => !isBuffTag(id)).sort((a,b) => a - b);
-  talentIds.forEach(id => {
-    const existing = tags.some(t => t.tagID === id);
-    html += `<option value="${id}" ${existing?'disabled':''}>${id}: ${TAG_NAMES[id]}${existing?' (已有)':''}</option>`;
+  // Grouped add talent UI
+  const tagCats = ['武学','高级','技艺','天生','志向','喜好','战法'];
+  if (!window._tagAddCat) window._tagAddCat = '武学';
+  html += `<div class="sub-tabs" style="margin-bottom:6px">`;
+  tagCats.forEach(cat => {
+    html += `<div class="sub-tab${window._tagAddCat===cat?' active':''}" onclick="window._tagAddCat='${cat}';renderContent()">${cat}</div>`;
   });
-  html += `</select>
-    <input id="addTagTime" type="number" value="-1" style="width:80px" title="持续时间 (-1=永久)">
-    <span style="font-size:11px;color:#666">(-1=永久)</span>
-    <button class="tag-add-btn" onclick="addTag('${src}')">+ 添加天赋</button>
-  </div>`;
+  html += `</div>`;
 
+  // Show tags in selected category as a grid
+  const catTags = Object.entries(TAG_DB).filter(([id, t]) => t.cat === window._tagAddCat).map(([id, t]) => ({id:parseInt(id), ...t}));
+  if (catTags.length) {
+    html += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">`;
+    catTags.forEach(t => {
+      const existing = tags.some(tag => tag.tagID === t.id);
+      const valColor = t.value >= 4 ? '#e94560' : t.value >= 2 ? '#d97706' : t.value >= 1 ? '#2ecc71' : t.value < 0 ? '#666' : '#aaa';
+      html += `<div style="display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:4px;font-size:12px;border:1px solid ${existing?'#e94560':'#333'};background:${existing?'#2a1a2e':'#1a1a2e'};cursor:${existing?'default':'pointer'};opacity:${existing?'0.6':'1'}"
+        ${existing?'':`onclick="addTagById('${src}',${t.id})"`}
+        title="${t.effect}">
+        <span style="color:${valColor};font-weight:bold;min-width:16px;text-align:center">${t.value}</span>
+        <span style="color:${existing?'#888':'#e0e0e0'}">${t.name}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  }
+
+  // Current talents list
   if (!talentTags.length) {
     html += '<p style="color:#666;padding:8px">无天赋</p>';
   } else {
@@ -56716,7 +57348,6 @@ function renderHeroTags(h, src) {
 
   // Buff section
   html += `<div class="card"><div class="card-title">状态/Buff (${buffTags.length})</div>`;
-
   html += `<div class="tag-add-row">
     <select id="addBuffSelect">
       <option value="">— 选择状态 —</option>`;
@@ -56749,10 +57380,16 @@ function renderTagRow(tag, i, p, src) {
   const color = getTagColor(tag.tagID);
   const timeText = tag.leftTime === -1 ? '永久' : `${r2(tag.leftTime)} 天`;
   const sourceText = tag.sourceHero != null ? heroLink(tag.sourceHero) : '';
+  const GD = (typeof GameData !== 'undefined') ? GameData : {};
+  const tagInfo = (GD.HERO_TAG_DATA || {})[tag.tagID];
+  const effectText = tagInfo ? tagInfo.effect : '';
+  const catText = tagInfo ? tagInfo.cat : '';
 
   return `<div class="tag-item">
     <span class="tag-id">#${tag.tagID}</span>
     <span class="tag-badge" style="background:${color};color:#fff">${name}</span>
+    ${catText ? `<span style="font-size:10px;color:#666">[${catText}]</span>` : ''}
+    ${effectText ? `<span style="font-size:10px;color:#8a8">${effectText}</span>` : ''}
     <span class="tag-time" style="flex:1">
       ⏱ <input type="number" step="any" value="${tag.leftTime}" style="width:70px;padding:2px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px"
         onchange="setVal('${p}.heroTagData[${i}].leftTime',parseFloat(this.value));renderContent()"
@@ -56774,6 +57411,42 @@ function addTag(src) {
   if (!h) return;
   if (!h.heroTagData) h.heroTagData = [];
   h.heroTagData.push({ tagID: tagID, leftTime: leftTime, sourceHero: null });
+  toast(`已添加: ${TAG_NAMES[tagID] || tagID}`);
+  renderContent();
+}
+
+function updateSkillAddList() {
+  const selEl = document.getElementById('addSkillSelect');
+  if (!selEl) return;
+  const typeF = window._addSkillType || '';
+  const lvF = window._addSkillLvF || '';
+  const forceF = window._addSkillForce || '';
+  // Get existing skill IDs from current hero
+  const list = currentTab === 'tempheroes' ? saveData.tempHeroes : saveData.heroes;
+  const h = list?.[selectedIndex];
+  const existingIds = new Set((h?.kungfuSkills || []).map(s => s.skillID));
+  const LV_NAMES = ['基础','进阶','上乘','秘传','顶级','绝世'];
+
+  let options = '<option value="">选择武学...</option>';
+  SKILLS_DATA.forEach(sk => {
+    if (typeF && sk['类别'] !== typeF) return;
+    if (lvF !== '' && String(sk['等级']) !== lvF) return;
+    const force = sk['所属势力'] || '江湖';
+    if (forceF && force !== forceF) return;
+    const owned = existingIds.has(sk.id);
+    const lvName = LV_NAMES[sk['等级']] || '';
+    options += `<option value="${sk.id}" ${owned?'disabled':''}>[${sk['类别']}] ${lvName} ${sk['名字']} (${force})${owned?' ✓':''}</option>`;
+  });
+  selEl.innerHTML = options;
+}
+
+function addTagById(src, tagID) {
+  const list = src === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  const h = list[selectedIndex];
+  if (!h) return;
+  if (!h.heroTagData) h.heroTagData = [];
+  if (h.heroTagData.some(t => t.tagID === tagID)) { toast('已有该天赋', true); return; }
+  h.heroTagData.push({ tagID: tagID, leftTime: -1, sourceHero: null });
   toast(`已添加: ${TAG_NAMES[tagID] || tagID}`);
   renderContent();
 }
@@ -56856,29 +57529,41 @@ function renderHeroSkills(h, src) {
   });
   html += `</select></div>`;
 
-  // Add skill row
-  html += `<div class="tag-add-row">
-    <input id="addSkillSearch" type="text" placeholder="搜索武学名称或ID..." oninput="filterSkillOptions(this.value)" style="width:160px">
-    <select id="addSkillSelect" style="max-width:280px">
-      <option value="">— 选择武学 —</option>`;
+  // Add skill row with filter dropdowns
   const existingIds = new Set(skills.map(s => s.skillID));
-  const sortedSkillIds = Object.keys(SKILL_MAP).map(Number).sort((a,b) => a - b);
-  sortedSkillIds.forEach(id => {
-    const d = SKILL_MAP[id];
-    if (!d) return;
-    if (skillFilterType !== 'all' && d[0] !== skillFilterType) return;
-    if (skillFilterLv !== 'all' && d[1] !== parseInt(skillFilterLv)) return;
-    const sf = getSkillForce(id);
-    if (skillFilterForce !== 'all' && sf !== skillFilterForce) return;
-    const owned = existingIds.has(id);
-    const lvInfo = ITEM_LV[d[1]];
-    const lvLabel = lvInfo ? (lvInfo.skillName || lvInfo.name) : '';
-    html += `<option value="${id}" data-name="${d[2]}" ${owned?'disabled':''}>${id}: [${d[0]}] ${lvLabel} ${d[2]}${owned?' (已有)':''}</option>`;
-  });
-  html += `</select>
-    <input id="addSkillLv" type="number" value="1" min="1" max="10" style="width:60px" title="初始等级">
-    <button class="tag-add-btn" onclick="addSkill('${src}')">+ 添加武学</button>
+  const SKILL_TYPES = ['内功','轻功','绝技','拳掌','剑法','刀法','长兵','奇门','射术'];
+  const SKILL_LVS = {0:'基础',1:'进阶',2:'上乘',3:'秘传',4:'顶级',5:'绝世'};
+  // Collect available forces from all skills
+  const allForces = new Set();
+  SKILLS_DATA.forEach(sk => { const f = sk['所属势力']; if (f && f !== '江湖') allForces.add(f); });
+
+  if (!window._addSkillType) window._addSkillType = '';
+  if (!window._addSkillLvF) window._addSkillLvF = '';
+  if (!window._addSkillForce) window._addSkillForce = '';
+
+  html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center;padding:6px;background:#111;border-radius:4px">
+    <span style="font-size:11px;color:#e94560">添加武学:</span>
+    <select id="addSkillTypeF" onchange="window._addSkillType=this.value;updateSkillAddList()" style="padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px">
+      <option value="">全部类型</option>
+      ${SKILL_TYPES.map(t => `<option value="${t}" ${window._addSkillType===t?'selected':''}>${t}</option>`).join('')}
+    </select>
+    <select id="addSkillLvF" onchange="window._addSkillLvF=this.value;updateSkillAddList()" style="padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px">
+      <option value="">全部品级</option>
+      ${Object.entries(SKILL_LVS).map(([k,v]) => `<option value="${k}" ${window._addSkillLvF===k?'selected':''}>${v}</option>`).join('')}
+    </select>
+    <select id="addSkillForceF" onchange="window._addSkillForce=this.value;updateSkillAddList()" style="padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px">
+      <option value="">全部门派</option>
+      <option value="江湖" ${window._addSkillForce==='江湖'?'selected':''}>江湖</option>
+      ${[...allForces].sort().map(f => `<option value="${f}" ${window._addSkillForce===f?'selected':''}>${f}</option>`).join('')}
+    </select>
+    <select id="addSkillSelect" style="max-width:280px;padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px">
+      <option value="">选择武学...</option>
+    </select>
+    <input id="addSkillLv" type="number" value="10" min="1" max="10" style="width:50px;padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px" title="初始等级">
+    <button onclick="addSkill('${src}')" style="padding:3px 10px;background:#0f3460;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px;cursor:pointer">+ 添加</button>
   </div>`;
+  // Populate the skill list after render
+  html += `<script>setTimeout(()=>updateSkillAddList(),0)<\/script>`;
 
   if (!skills.length) {
     html += '<p style="color:#666;padding:8px">无武学</p></div>';
@@ -56945,7 +57630,8 @@ function renderHeroSkills(h, src) {
         html += `<div class="item-detail open">`;
         if (skDesc) html += `<div style="font-size:12px;color:#888;margin-bottom:8px;line-height:1.5">${skDesc}</div>`;
         html += `<div class="field-grid" style="margin-bottom:10px">
-          ${field('等级', 'number', sk.lv, `${sp}.lv`)}
+          <div class="field"><label>等级</label><input type="number" value="${sk.lv}" min="0" max="10"
+            onchange="updateSkillLevel('${src}',${i},parseInt(this.value)||0)"></div>
           ${field('实战经验', 'number', r2(sk.fightExp), `${sp}.fightExp`)}
           ${field('读书经验', 'number', r2(sk.bookExp), `${sp}.bookExp`)}
           ${field('装备', 'select', sk.equiped, `${sp}.equiped`, [{v:true,l:'是'},{v:false,l:'否'}])}
@@ -57024,6 +57710,10 @@ function addSkill(src) {
   const h = list[selectedIndex];
   if (!h) return;
   if (!h.kungfuSkills) h.kungfuSkills = [];
+
+  const fx = buildSkillEffects(skillID, lv);
+  const equipTotal = Object.values(fx.speEquipData).reduce((a,b) => a + Math.abs(b), 0);
+
   h.kungfuSkills.push({
     skillID: skillID,
     lv: lv,
@@ -57032,17 +57722,40 @@ function addSkill(src) {
     equiped: false,
     isNew: true,
     belongHeroID: h.heroID,
-    speEquipData: { heroSpeAddData: {} },
-    equipUseSpeAddValue: 0.0,
-    speUseData: { heroSpeAddData: {} },
-    damageUseSpeAddValue: 0.0,
+    speEquipData: { heroSpeAddData: fx.speEquipData },
+    equipUseSpeAddValue: Math.round(equipTotal * 100) / 100,
+    speUseData: { heroSpeAddData: fx.speUseData },
+    damageUseSpeAddValue: fx.basePower,
     selfUseSpeAddValue: 0.0,
     enemyUseSpeAddValue: 0.0,
     extraAddData: { heroSpeAddData: {} },
     maxManaChanged: false
   });
   const name = getSkillName(skillID) || skillID;
-  toast(`已添加武学: ${name}`);
+  openSkillIdx = h.kungfuSkills.length - 1;
+  toast(`已添加武学: ${name} (Lv${lv}，已填充效果数据)`);
+  renderContent();
+  setTimeout(() => {
+    const el = document.querySelector(`.item-row .item-detail.open`);
+    if (el) el.closest('.item-row').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 50);
+}
+
+function updateSkillLevel(src, idx, newLv) {
+  const list = src === 'heroes' ? saveData.heroes : saveData.tempHeroes;
+  const h = list[selectedIndex];
+  if (!h || !h.kungfuSkills || !h.kungfuSkills[idx]) return;
+  const sk = h.kungfuSkills[idx];
+  sk.lv = newLv;
+
+  const fx = buildSkillEffects(sk.skillID, newLv);
+  sk.speEquipData = { heroSpeAddData: fx.speEquipData };
+  sk.equipUseSpeAddValue = Math.round(Object.values(fx.speEquipData).reduce((a,b) => a + Math.abs(b), 0) * 100) / 100;
+  sk.speUseData = { heroSpeAddData: fx.speUseData };
+  sk.damageUseSpeAddValue = fx.basePower;
+
+  const name = getSkillName(sk.skillID) || sk.skillID;
+  toast(`${name} → Lv${newLv}（效果已更新）`);
   renderContent();
 }
 
@@ -57101,6 +57814,257 @@ function clearItemFilters() {
   renderContent();
 }
 
+function updateAddItemList() {
+  const typeEl = document.getElementById('addItemType');
+  const lvEl = document.getElementById('addItemLv');
+  const subEl = document.getElementById('addItemSub');
+  const selEl = document.getElementById('addItemSelect');
+  if (!typeEl || !selEl) return;
+  const t = typeEl.value;
+  const filterLv = lvEl && lvEl.value !== '' ? parseInt(lvEl.value) : -1;
+  const filterSub = subEl ? subEl.value : '';
+  const GD = (typeof GameData !== 'undefined') ? GameData : {};
+  const SI = GD.STATIC_ITEMS || {};
+  if (!GD.STATIC_ITEMS_LOADED) { GD.generateQualityItems?.(); }
+  const LV_NAMES = ['劣质','普通','优质','精良','完美','绝世'];
+
+  // Update sub-category dropdown
+  const WEAPON_SUBS = {0:'拳掌',1:'剑法',2:'刀法',3:'长兵',4:'奇门',5:'射术'};
+  const ARMOR_SUBS = {1:'护甲',2:'头盔',3:'足履'};
+  const ACCESSORY_SUBS = {4:'腰带',0:'香囊',3:'玉佩',2:'扳指',1:'羽扇',5:'面具'};
+  const BOOK_SUBS = ['内功','轻功','绝技','拳掌','剑法','刀法','长兵','奇门','射术'];
+  if (subEl) {
+    const prevSub = subEl.value;
+    let subOpts = '<option value="">全部子类</option>';
+    if (t === 'weapon') {
+      Object.entries(WEAPON_SUBS).forEach(([k,v]) => { subOpts += `<option value="${k}">${v}</option>`; });
+    } else if (t === 'armor') {
+      Object.entries(ARMOR_SUBS).forEach(([k,v]) => { subOpts += `<option value="${k}">${v}</option>`; });
+    } else if (t === 'accessory') {
+      Object.entries(ACCESSORY_SUBS).forEach(([k,v]) => { subOpts += `<option value="${k}">${v}</option>`; });
+    } else if (t === 'book') {
+      BOOK_SUBS.forEach(v => { subOpts += `<option value="${v}">${v}</option>`; });
+    }
+    subEl.innerHTML = subOpts;
+    // Restore previous selection if still valid
+    if (prevSub) { subEl.value = prevSub; }
+  }
+  const activeSub = subEl ? subEl.value : '';
+
+  let options = '<option value="">选择物品...</option>';
+
+  const addOpts = (list, prefix, subKey) => {
+    const seen = new Set();
+    (list || []).forEach((item, i) => {
+      const lv = item.itemLv ?? item['等级'] ?? 0;
+      if (filterLv >= 0 && lv !== filterLv) return;
+      if (activeSub && subKey) {
+        const itemSub = String(item[subKey] ?? '');
+        if (itemSub !== activeSub) return;
+      }
+      const key = item.名字 || item.名称 || '';
+      if (seen.has(key)) return;
+      seen.add(key);
+      options += `<option value="${prefix}_${i}">${key} (${LV_NAMES[lv]})</option>`;
+    });
+  };
+
+  if (t === 'weapon') { addOpts(SI.weapons, 'w', '小类'); }
+  else if (t === 'armor') { addOpts(SI.armors, 'a', '原始类别'); }
+  else if (t === 'accessory') { addOpts(SI.accessoryTemplates, 'ac', 'littleType'); }
+  else if (t === 'med') { addOpts(SI.meds, 'm'); }
+  else if (t === 'food') { addOpts(SI.foods, 'f'); }
+  else if (t === 'horse') { addOpts(SI.horses, 'h'); }
+  else if (t === 'material') { addOpts(SI.materialTemplates, 'mt'); }
+  else if (t === 'treasure') { addOpts(SI.treasures, 'tr'); }
+  else if (t === 'book') {
+    const skLvNames = ['基础','进阶','上乘','秘传','顶级','绝世'];
+    const seen = new Set();
+    SKILLS_DATA.forEach(sk => {
+      const lv = sk['等级'] || 0;
+      if (filterLv >= 0 && lv !== filterLv) return;
+      if (activeSub && sk['类别'] !== activeSub) return;
+      const key = sk['名字'];
+      if (seen.has(key)) return;
+      seen.add(key);
+      options += `<option value="bk_${sk.id}">${key} [${skLvNames[lv]}] (${sk['类别']})</option>`;
+    });
+  }
+  selEl.innerHTML = options;
+}
+
+function addItemToHero(basePath) {
+  const selEl = document.getElementById('addItemSelect');
+  if (!selEl || !selEl.value) { toast('请选择物品', true); return; }
+  const val = selEl.value;
+  const GD = (typeof GameData !== 'undefined') ? GameData : {};
+  const SI = GD.STATIC_ITEMS || {};
+
+  let newItem = null;
+  const [prefix, idx] = [val.split('_')[0], parseInt(val.split('_').slice(1).join('_'))];
+
+  if (prefix === 'w' && SI.weapons?.[idx]) {
+    const w = SI.weapons[idx];
+    const wLv = w['等级'] ?? 0;
+    const wRare = w['稀有度'] ?? 0;
+    const attrId = w.属性 ?? 0;
+    const baseStatVal = Math.round(3 + wLv * 2 + wRare * 1.5);
+    const baseStats = {};
+    baseStats[String(attrId)] = baseStatVal;
+    newItem = {
+      itemID: w.id || 0, type: 0, subType: w.小类 || 0, name: w.名字,
+      checkName: null, describe: null, value: w.价值 || 100, itemLv: wLv, rareLv: wRare, weight: 5 + wLv,
+      isNew: true, poisonNum: 0, poisonNumDetected: false,
+      equipmentData: {
+        enhanceLv: 0, littleType: w.小类 || 0, attriType: attrId,
+        baseAddData: { heroSpeAddData: baseStats },
+        extraAddData: { heroSpeAddData: {} },
+        equiped: false, animName: w.动画 || null,
+        equipPoisonData: { poisonNum: 0, poisonBuffData: { heroSpeAddData: '' } },
+        speEnhanceLv: 0, speWeightLv: 0
+      },
+      medFoodData: null, bookData: null, treasureData: null, materialData: null, horseData: null
+    };
+  } else if (prefix === 'a' && SI.armors?.[idx]) {
+    const a = SI.armors[idx];
+    const aLv = a['等级'] ?? 0;
+    const aRare = a['稀有度'] ?? 0;
+    const baseStats = {};
+    if (a.护甲) baseStats["61"] = a.护甲;
+    if (a.轻功) baseStats["7"] = a.轻功;
+    newItem = {
+      itemID: a.id || 0, type: 0, subType: (a.原始类别 || a.类别 || 1), name: a.名字,
+      checkName: null, describe: null, value: a.价值 || 100, itemLv: aLv, rareLv: aRare, weight: 5 + aLv,
+      isNew: true, poisonNum: 0, poisonNumDetected: false,
+      equipmentData: {
+        enhanceLv: 0, littleType: (a.原始类别 || a.类别 || 1), attriType: 0,
+        baseAddData: { heroSpeAddData: baseStats },
+        extraAddData: { heroSpeAddData: {} },
+        equiped: false, animName: null,
+        equipPoisonData: { poisonNum: 0, poisonBuffData: { heroSpeAddData: '' } },
+        speEnhanceLv: 0, speWeightLv: 0
+      },
+      medFoodData: null, bookData: null, treasureData: null, materialData: null, horseData: null
+    };
+  } else if (prefix === 'ac' && SI.accessoryTemplates?.[idx]) {
+    const ac = SI.accessoryTemplates[idx];
+    const acLv = ac['等级'] ?? 0;
+    const acRare = ac['稀有度'] ?? 0;
+    const baseStats = {};
+    if (ac.力道) baseStats["0"] = ac.力道;
+    if (ac.灵巧) baseStats["1"] = ac.灵巧;
+    if (ac.智力) baseStats["2"] = ac.智力;
+    if (ac.意志) baseStats["3"] = ac.意志;
+    if (ac.体质) baseStats["4"] = ac.体质;
+    if (ac.经脉) baseStats["5"] = ac.经脉;
+    newItem = {
+      itemID: ac.id || 0, type: 0, subType: 4, name: ac.名字,
+      checkName: null, describe: null, value: ac.价值 || Math.round(200 * (1 + acLv + acRare * 1.5)), itemLv: acLv, rareLv: acRare, weight: 3 + acLv,
+      isNew: true, poisonNum: 0, poisonNumDetected: false,
+      equipmentData: {
+        enhanceLv: 0, littleType: ac.littleType ?? 0, attriType: 0,
+        baseAddData: { heroSpeAddData: baseStats },
+        extraAddData: { heroSpeAddData: {} },
+        equiped: false, animName: null,
+        equipPoisonData: { poisonNum: 0, poisonBuffData: { heroSpeAddData: '' } },
+        speEnhanceLv: 0, speWeightLv: 0
+      },
+      medFoodData: null, bookData: null, treasureData: null, materialData: null, horseData: null
+    };
+  } else if ((prefix === 'm' || prefix === 'f') && SI[prefix === 'm' ? 'meds' : 'foods']?.[idx]) {
+    const mf = SI[prefix === 'm' ? 'meds' : 'foods'][idx];
+    const mfLv = mf['等级'] ?? 0;
+    const mfRare = mf['稀有度'] ?? 0;
+    newItem = {
+      itemID: mf.ID || 0, type: prefix === 'm' ? 1 : 2, subType: mf.小类 || 0, name: mf.名称 || mf.名字,
+      checkName: mf.审核名 || '无', describe: '', value: mf.价值 || 50, itemLv: mfLv, rareLv: mfRare, weight: 3,
+      isNew: true, poisonNum: 0, poisonNumDetected: false, equipmentData: null,
+      medFoodData: {
+        enhanceLv: 0,
+        changeHeroState: {
+          hp: mf.生命 || 0, maxhp: mf.生命上限 || 0, mana: mf.内力 || 0, maxMana: mf.内力上限 || 0,
+          power: mf.体力 || 0, maxPower: 0, externalInjury: mf.外伤 || 0, internalInjury: mf.内伤 || 0,
+          poisonInjury: mf.中毒 || 0, changeAttri: [], charm: 0, buffData: { heroSpeAddData: '' }
+        },
+        randomSpeAddValue: 0, extraAddData: { heroSpeAddData: {} }
+      },
+      bookData: null, treasureData: null, materialData: null, horseData: null
+    };
+  } else if (prefix === 'bk') {
+    const skData = SKILLS_BY_ID[idx];
+    const skName = skData ? skData['名字'] : `武学${idx}`;
+    const skLv = skData ? (skData['等级'] || 0) : 0;
+    newItem = {
+      itemID: 0, type: 3, subType: 0, name: skName,
+      checkName: null, describe: null, value: [100, 400, 800, 1600, 3200, 4000][skLv] || 100, itemLv: skLv, rareLv: 5, weight: 3,
+      isNew: true, poisonNum: 0, poisonNumDetected: false, equipmentData: null, medFoodData: null,
+      bookData: { skillID: idx },
+      treasureData: null, materialData: null, horseData: null
+    };
+  } else if (prefix === 'tr' && SI.treasures?.[idx]) {
+    const tr = SI.treasures[idx];
+    newItem = {
+      itemID: 0, type: 4, subType: tr.subType || 0, name: tr.名字 || tr.名称,
+      checkName: null, describe: null, value: tr.价值 || 200, itemLv: tr['等级'] ?? 0, rareLv: tr['稀有度'] ?? 0, weight: 10,
+      isNew: true, poisonNum: 0, poisonNumDetected: false, equipmentData: null, medFoodData: null, bookData: null,
+      treasureData: {
+        fullIdentified: true, identifyKnowledgeNeed: 0,
+        treasureLv: [0, 0, 0, 0], identifyDifficulty: [0, 0, 0, 0],
+        identified: [true, true, true, true], playerGuessTreasureLv: [[], [], [], []]
+      },
+      materialData: null, horseData: null
+    };
+  } else if (prefix === 'mt' && SI.materialTemplates?.[idx]) {
+    const mt = SI.materialTemplates[idx];
+    const mtLv = mt['等级'] ?? 0;
+    const mtRare = mt['稀有度'] ?? 0;
+    const mtStats = {};
+    if (mt.属性ID !== undefined && mt.属性值) mtStats[String(mt.属性ID)] = mt.属性值;
+    newItem = {
+      itemID: 0, type: 5, subType: mt.subType || 0, name: mt.名字 || mt.名称,
+      checkName: null, describe: null, value: mt.价值 || 50, itemLv: mtLv, rareLv: mtRare, weight: 4,
+      isNew: true, poisonNum: 0, poisonNumDetected: false, equipmentData: null, medFoodData: null, bookData: null, treasureData: null,
+      materialData: { extraAddData: { heroSpeAddData: mtStats } },
+      horseData: null
+    };
+  } else if (prefix === 'h' && SI.horses?.[idx]) {
+    const hr = SI.horses[idx];
+    const hrLv = hr['等级'] ?? 0;
+    const hrRare = hr['稀有度'] ?? 0;
+    const mult = 1 + hrRare * 0.3;
+    newItem = {
+      itemID: 0, type: 6, subType: 0, name: hr.名称 || hr.名字,
+      checkName: null, describe: null, value: hr.价值 || 200, itemLv: hrLv, rareLv: hrRare, weight: 12,
+      isNew: true, poisonNum: 0, poisonNumDetected: false, equipmentData: null, medFoodData: null, bookData: null, treasureData: null, materialData: null,
+      horseData: {
+        equiped: false,
+        speed: Math.round((hr.速度 || 1) * mult),
+        power: Math.round((hr.耐力 || 10) * mult),
+        sprint: Math.round((hr.冲刺 || 3) * mult),
+        resist: Math.round((hr.抗性 || 10) * mult),
+        speedAdd: 0, powerAdd: 0, sprintAdd: 0, resistAdd: 0,
+        maxWeightAdd: 0, nowPower: 0, favorRate: 0, sprintTimeLeft: 0, sprintTimeCd: 0
+      }
+    };
+  }
+
+  if (!newItem) { toast('无法创建该物品', true); return; }
+
+  try {
+    const container = new Function('saveData', `return ${basePath}`)(saveData);
+    if (!container.allItem) container.allItem = [];
+    container.allItem.push(newItem);
+    openItemIdx = container.allItem.length - 1;
+    toast(`已添加: ${newItem.name}`);
+    renderContent();
+    // Scroll to the new item after render
+    setTimeout(() => {
+      const el = document.querySelector('.item-row:last-child');
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 50);
+  } catch(e) { toast('添加失败: ' + e.message, true); }
+}
+
 function renderHeroItems(h, src) {
   const p = heroPath(src);
   const isPlayerHero = h.heroID === 0;
@@ -57137,6 +58101,34 @@ function renderHeroItems(h, src) {
 
   // Sort & filter controls
   html += `<div class="card"><div class="card-title">${sourceLabel} — 银两: <input type="number" value="${money}" style="width:100px;padding:3px 6px;background:#1a1a2e;border:1px solid #333;color:#e94560;border-radius:3px" onchange="setVal('${basePath}.money',parseInt(this.value))"> — 物品 ${items.length} 件</div>`;
+
+  // Add item controls
+  html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;align-items:center;padding:6px;background:#111;border-radius:4px">
+    <span style="font-size:11px;color:#e94560">添加物品:</span>
+    <select id="addItemType" onchange="updateAddItemList()" style="padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px">
+      <option value="">选择类型...</option>
+      <option value="weapon">武器</option><option value="armor">防具</option><option value="accessory">饰品</option>
+      <option value="med">丹药</option><option value="food">饮食</option>
+      <option value="book">秘籍</option><option value="treasure">珍宝</option>
+      <option value="material">材料</option><option value="horse">马匹</option>
+    </select>
+    <select id="addItemLv" onchange="updateAddItemList()" style="padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px">
+      <option value="">全部品质</option>
+      <option value="0" style="color:#6b7280">劣质</option>
+      <option value="1" style="color:#059669">普通</option>
+      <option value="2" style="color:#3b82f6">优质</option>
+      <option value="3" style="color:#7c3aed">精良</option>
+      <option value="4" style="color:#d97706">完美</option>
+      <option value="5" style="color:#dc2626">绝世</option>
+    </select>
+    <select id="addItemSub" onchange="updateAddItemList()" style="padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px">
+      <option value="">全部子类</option>
+    </select>
+    <select id="addItemSelect" style="padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px;max-width:200px">
+      <option value="">先选类型...</option>
+    </select>
+    <button onclick="addItemToHero('${basePath}')" style="padding:3px 10px;background:#0f3460;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px;cursor:pointer">+ 添加</button>
+  </div>`;
 
   html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;align-items:center">
     <span style="font-size:11px;color:#666">类型:</span>`;
@@ -57429,7 +58421,7 @@ function renderHeroRelations(h, src) {
   const rels = [
     {key:'Students',label:'徒弟'},{key:'Brothers',label:'结义'},
     {key:'PreLovers',label:'情侣'},{key:'Friends',label:'朋友'},
-    {key:'Haters',label:'仇敌'}
+    {key:'Haters',label:'仇敌'},{key:'Relatives',label:'亲属'}
   ];
 
   rels.forEach(r => {
@@ -57678,6 +58670,35 @@ function renderArea(c) {
           </tr>`;
         }
         html += `</tbody></table></div>`;
+
+        // Tech research
+        const techData = f.techLvData || [];
+        const GD_T = (typeof GameData !== 'undefined') ? GameData : {};
+        const TECH = GD_T.TECH_DATA || {};
+        const techCats = ['门派管理','武学训练','技艺训练','属性训练'];
+        if (techData.length) {
+          html += `<div class="card"><div class="card-title">门派科研 (${techData.length})</div>
+            <div class="batch-bar" style="margin-bottom:6px">
+              <button onclick="batchSetTechLv('${fp}',${techData.length},10)">全部满级</button>
+              <button onclick="batchSetTechLv('${fp}',${techData.length},5)">全部5级</button>
+            </div>
+            <table class="item-table"><thead><tr>
+              <th>科研</th><th>加成</th><th>等级</th><th>进度</th>
+            </tr></thead><tbody>`;
+          techData.forEach((td, ti) => {
+            const info = TECH[td.techID] || {};
+            const catName = techCats[info.cat] || '';
+            html += `<tr>
+              <td><span style="color:#888;font-size:10px">[${catName}]</span> ${info.name || td.techID}</td>
+              <td style="font-size:11px;color:#8a8">${info.bonus || ''} +${info.val || 0}</td>
+              <td><input type="number" min="0" max="10" value="${td.lv}" style="width:50px"
+                onchange="setVal('${fp}.techLvData[${ti}].lv',parseInt(this.value)||0)"></td>
+              <td><input type="number" step="0.01" min="0" max="1" value="${r2(td.researchPercent)}" style="width:60px"
+                onchange="setVal('${fp}.techLvData[${ti}].researchPercent',parseFloat(this.value)||0)"></td>
+            </tr>`;
+          });
+          html += `</tbody></table></div>`;
+        }
       }
     }
   } else if (heroSubTab === 'buildings') {
@@ -57938,12 +58959,23 @@ function renderBuildingDetail(a, ap, tiles, BNAME, BICON, specialBldId) {
       </div>
     </div>`;
 
+  // Building info from game data
+  const GD2 = (typeof GameData !== 'undefined') ? GameData : {};
+  const bldDef = (GD2.BUILDING_DEFAULTS || {})[b.buildingID];
+  if (bldDef) {
+    html += `<div style="font-size:11px;margin-bottom:8px;padding:6px;background:#111;border-radius:4px;border:1px solid #222">`;
+    if (bldDef.produce) html += `<div><span style="color:#2ecc71">产出:</span> <span style="color:#aaa">${bldDef.produce}</span></div>`;
+    if (bldDef.maintain) html += `<div><span style="color:#e74c3c">维护:</span> <span style="color:#aaa">${bldDef.maintain}</span></div>`;
+    if (bldDef.bonus) html += `<div><span style="color:#3498db">加成:</span> <span style="color:#aaa">${bldDef.bonus}</span></div>`;
+    html += `</div>`;
+  }
+
   // Level stars
   html += `<div style="margin-bottom:12px"><label style="font-size:12px;color:#888">建筑等级</label>
     <div class="bld-lv-stars">`;
   for (let lv = 0; lv <= 10; lv++) {
     html += `<div class="bld-lv-star${b.lv === lv ? ' active' : ''}"
-      onclick="setVal('${ap}.areaTiles[${tIdx}].building.lv',${lv});renderContent()"
+      onclick="setBuildingLevel('${ap}',${tIdx},${lv})"
       title="等级 ${lv}">${lv}</div>`;
   }
   html += `</div></div>`;
@@ -57991,9 +59023,19 @@ function selectEmptyTile(tIdx, ap) {
   renderContent();
 }
 
+function setBuildingLevel(ap, tIdx, lv) {
+  setVal(`${ap}.areaTiles[${tIdx}].building.lv`, lv);
+  setVal(`${ap}.areaTiles[${tIdx}].building.resourceStoreRate`, Math.round((1 + lv * 0.2) * 100) / 100);
+  renderContent();
+}
+
 function batchSetBuildingLv(ap, indices, lv) {
+  const store = Math.round((1 + lv * 0.2) * 100) / 100;
   indices.forEach(idx => {
-    try { setVal(`${ap}.areaTiles[${idx}].building.lv`, lv); } catch(e) {}
+    try {
+      setVal(`${ap}.areaTiles[${idx}].building.lv`, lv);
+      setVal(`${ap}.areaTiles[${idx}].building.resourceStoreRate`, store);
+    } catch(e) {}
   });
   toast(`已将 ${indices.length} 个建筑设为等级 ${lv}`);
   renderContent();
@@ -58007,9 +59049,20 @@ function batchSetRoadLv(ap, indices, lv) {
   renderContent();
 }
 
+function batchSetTechLv(fp, count, lv) {
+  for (let i = 0; i < count; i++) {
+    try { setVal(`${fp}.techLvData[${i}].lv`, lv); } catch(e) {}
+  }
+  toast(`已将 ${count} 项科研设为等级 ${lv}`);
+  renderContent();
+}
+
 function changeBuildingType(tIdx, ap, newId) {
   setVal(`${ap}.areaTiles[${tIdx}].building.buildingID`, newId);
-  toast(`已更换建筑为 ${(typeof GameData !== 'undefined' && GameData.BUILDING_ID_TO_NAME) ? GameData.BUILDING_ID_TO_NAME[newId] || newId : newId}`);
+  const GD = (typeof GameData !== 'undefined') ? GameData : {};
+  const defaults = (GD.BUILDING_DEFAULTS || {})[newId] || {};
+  const name = (GD.BUILDING_ID_TO_NAME || {})[newId] || newId;
+  toast(`已更换建筑为 ${name} (${defaults.produce || '无产出'})`);
   renderContent();
 }
 
@@ -58018,20 +59071,29 @@ function placeBuilding(tIdx, ap, buildingId) {
   const path = `${ap}.areaTiles[${tIdx}]`;
   try {
     const tile = new Function('saveData', `return ${path}`)(saveData);
+    const GD = (typeof GameData !== 'undefined') ? GameData : {};
+    const defaults = (GD.BUILDING_DEFAULTS || {})[buildingId] || {};
+    // produceRate/resourceStoreRate scale: base 1.0 + 0.05 per level
+    const lv = 1;
+    const produceRate = defaults.produce ? 1.05 : 1;
+    const resourceStoreRate = 1.2;
+
     if (!tile.building) {
       tile.building = {
-        buildingID: buildingId, lv: 1, buildTimeLeft: 0, upgradeTimeLeft: 0,
+        buildingID: buildingId, lv: lv, buildTimeLeft: 0, upgradeTimeLeft: 0,
         destroyTimeLeft: 0, noCancel: false,
         shopItemList: { heroID: -1, forceID: -1, money: 0, weight: 0, maxWeight: -1, allItem: [] },
-        missionDatas: [], produceRate: 1, resourceStoreRate: 1,
+        missionDatas: [], produceRate: produceRate, resourceStoreRate: resourceStoreRate,
         areaID: tile.areaID, belongHeroID: -1, missionNumCount: 0, plotNumCount: 0, enemyMonth: 0
       };
     } else {
       tile.building.buildingID = buildingId;
-      tile.building.lv = 1;
+      tile.building.lv = lv;
+      tile.building.produceRate = produceRate;
+      tile.building.resourceStoreRate = resourceStoreRate;
     }
     window._selectedMapTile = tIdx;
-    toast(`已放置 ${(typeof GameData !== 'undefined' && GameData.BUILDING_ID_TO_NAME) ? GameData.BUILDING_ID_TO_NAME[buildingId] || buildingId : buildingId}`);
+    toast(`已放置 ${(GD.BUILDING_ID_TO_NAME || {})[buildingId] || buildingId} (${defaults.produce || '无产出'} / ${defaults.maintain || '无维护'})`);
     renderContent();
   } catch(e) { console.error('placeBuilding error:', e); }
 }
