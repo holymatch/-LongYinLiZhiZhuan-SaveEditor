@@ -231,7 +231,7 @@ body { font-family: 'Microsoft YaHei', 'SimHei', sans-serif; background: #1a1a2e
 <body>
 
 <div class="topbar">
-  <h1>⚔ 龍胤立志傳 存档编辑器 <span style="font-size:11px;color:#666;font-weight:normal">v1.0.0</span></h1>
+  <h1>⚔ 龍胤立志傳 存档编辑器 <span style="font-size:11px;color:#666;font-weight:normal">v1.0.5</span></h1>
   <span class="save-info" id="saveInfo">未加载存档</span>
   <button class="btn-load" onclick="loadFolder()">📂 加载存档</button>
   <button class="btn-save" onclick="saveAll()">💾 保存存档</button>
@@ -9817,8 +9817,7 @@ GameData.TECH_DATA = {
   56:{name:"赈济民心",cat:0,bonus:"全域民心",val:1,fixed:"TRUE",diff:4,res:"银钱"},
   57:{name:"稳固防御",cat:0,bonus:"全域防御",val:1,fixed:"TRUE",diff:4,res:"银钱"},
   58:{name:"户籍人口",cat:0,bonus:"全域人口",val:5,fixed:"TRUE",diff:4,res:"粮食"},
-  59:{name:"未知科研59",cat:0,bonus:"未知",val:0,fixed:"FALSE",diff:1,res:"银钱"},
-  69:{name:"城防工事",cat:0,bonus:"城防耐久",val:0.02,fixed:"FALSE",diff:1,res:"木料"},
+  59:{name:"城防工事",cat:0,bonus:"城防耐久",val:0.02,fixed:"FALSE",diff:1,res:"木料"},
 };
 
 GameData.SKIN_DATA = {
@@ -57156,7 +57155,7 @@ function renderHeroBasic(h, src) {
       ${field('性别', 'select', h.isFemale, `${p}.isFemale`, [{v:false,l:'男'},{v:true,l:'女'}])}
       ${field('世代', 'number', h.generation, `${p}.generation`)}
       ${fieldSelect('性格', h.nature, `${p}.nature`, NATURE_NAMES.map((n,i)=>({v:i,l:n})))}
-      ${field('天赋', 'number', h.talent, `${p}.talent`)}
+      ${fieldSelect('资质', h.talent, `${p}.talent`, [{v:0,l:'0 (愚钝?)'},{v:1,l:'1 (平平)'},{v:2,l:'2 (聪颖)'},{v:3,l:'3 (超群?)'},{v:4,l:'4 (究极)'}])}
       ${fieldSelect('所属门派', h.belongForceID, `${p}.belongForceID`, Object.entries(FORCE_MAP).map(([k,v])=>({v:parseInt(k),l:v})))}
       ${fieldSelect('门派职位', h.heroForceLv, `${p}.heroForceLv`, Object.entries(FORCE_LV_CN).map(([k,v])=>({v:parseInt(k),l:v})))}
       ${field('掌门', 'select', h.isLeader, `${p}.isLeader`, [{v:false,l:'否'},{v:true,l:'是'}])}
@@ -57183,6 +57182,19 @@ function renderHeroBasic(h, src) {
   if (curSkin) html += '<div style="font-size:12px;color:#888;margin-top:6px">当前效果: <span style="color:#2ecc71">' + curSkin.effect + '</span></div>';
   html += '</div>';
 
+  // Face data
+  const faceIds = h.faceData?.faceID || [];
+  const faceLabels = ['脸型','眉毛','眼睛','鼻子','嘴巴','胡须','发型','头饰','面饰'];
+  if (faceIds.length) {
+    html += '<div class="card"><div class="card-title">面容</div><div class="field-grid">';
+    faceLabels.forEach((label, fi) => {
+      if (fi < faceIds.length) {
+        html += field(label, 'number', faceIds[fi], p + '.faceData.faceID[' + fi + ']');
+      }
+    });
+    html += '</div></div>';
+  }
+
   html += `<div class="card"><div class="card-title">状态</div>
     <div class="field-grid">
       ${field('生命', 'number', r2(h.hp), `${p}.hp`)}
@@ -57202,8 +57214,8 @@ function renderHeroBasic(h, src) {
     <div class="field-grid">
       ${field('名望', 'number', r2(h.fame), `${p}.fame`)}
       ${field('恶名', 'number', r2(h.badFame), `${p}.badFame`)}
-      ${field('善恶', 'number', r2(h.evil), `${p}.evil`)}
-      ${field('正邪', 'number', r2(h.chaos), `${p}.chaos`)}
+      ${field('善恶 (0善良↔100凶狠)', 'number', r2(h.evil), `${p}.evil`)}
+      ${field('秩序 (0戒律↔100无序)', 'number', r2(h.chaos), `${p}.chaos`)}
       ${field('忠诚', 'number', r2(h.loyal), `${p}.loyal`)}
       ${field('贡献', 'number', r2(h.forceContribution), `${p}.forceContribution`)}
       ${field('俸禄', 'number', h.salary, `${p}.salary`)}
