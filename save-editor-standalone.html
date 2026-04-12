@@ -231,7 +231,7 @@ body { font-family: 'Microsoft YaHei', 'SimHei', sans-serif; background: #1a1a2e
 <body>
 
 <div class="topbar">
-  <h1>⚔ 龍胤立志傳 存档编辑器 <span style="font-size:11px;color:#666;font-weight:normal">v1.0.5</span></h1>
+  <h1>⚔ 龍胤立志傳 存档编辑器 <span style="font-size:11px;color:#666;font-weight:normal">v1.1.2</span></h1>
   <span class="save-info" id="saveInfo">未加载存档</span>
   <button class="btn-load" onclick="loadFolder()">📂 加载存档</button>
   <button class="btn-save" onclick="saveAll()">💾 保存存档</button>
@@ -242,6 +242,7 @@ body { font-family: 'Microsoft YaHei', 'SimHei', sans-serif; background: #1a1a2e
   <div class="tab active" data-tab="heroes" onclick="switchMainTab('heroes')">🧑‍🤝‍🧑 门派弟子</div>
   <div class="tab" data-tab="tempheroes" onclick="switchMainTab('tempheroes')">👤 江湖人物</div>
   <div class="tab" data-tab="world" onclick="switchMainTab('world')">🗺 天下地图</div>
+  <div class="tab" data-tab="forces" onclick="switchMainTab('forces')">⚔ 门派</div>
 </div>
 
 <div class="main">
@@ -57023,7 +57024,8 @@ async function saveAll() {
 function switchMainTab(tab) {
   currentTab = tab;
   selectedIndex = 0;
-  heroSubTab = 'basic';
+  heroSubTab = tab === 'world' ? 'area' : tab === 'forces' ? 'info' : 'basic';
+  if (tab === 'forces') window._forceSubTab = 'info';
   document.querySelectorAll('#mainTabs .tab').forEach(t =>
     t.classList.toggle('active', t.dataset.tab === tab));
   renderSidebar();
@@ -57039,10 +57041,23 @@ function renderSidebar() {
   if (currentTab === 'heroes') items = saveData.heroes;
   else if (currentTab === 'tempheroes') items = saveData.tempHeroes;
   else if (currentTab === 'world') items = (saveData.save?.Areas || []);
+  else if (currentTab === 'forces') items = (saveData.save?.Forces || []);
 
   let html = `<div class="sidebar-search"><input type="text" placeholder="搜索..." oninput="filterSidebar(this.value)"></div>`;
 
-  if (currentTab === 'world') {
+  if (currentTab === 'forces') {
+    html += `<div class="sidebar-header">门派 (${items.length})</div>`;
+    items.forEach((f, i) => {
+      const color = getForceColor(f.forceID);
+      let extraTags = '';
+      if ((f.masterForce ?? -1) >= 0) extraTags += '<span class="tag" style="background:#e67e22;color:#fff;font-size:10px">附庸</span>';
+      if (Array.isArray(f.servantForce) && f.servantForce.length) extraTags += '<span class="tag" style="background:#f39c12;color:#333;font-size:10px">宗主</span>';
+      html += `<div class="sidebar-item${i===selectedIndex?' active':''}" data-idx="${i}" data-name="${f.forceName}" onclick="selectItem(${i})">
+        <span class="name" style="color:${color}">${f.forceName}${extraTags}</span>
+        <span class="sub">Lv${f.forceLv}</span>
+      </div>`;
+    });
+  } else if (currentTab === 'world') {
     html += `<div class="sidebar-header">地区 (${items.length})</div>`;
     items.forEach((a, i) => {
       const aType = getAreaType(a.areaID);
@@ -57108,6 +57123,7 @@ function renderContent() {
   if (!dirHandle) { c.innerHTML = '<div class="empty"><div class="icon">📂</div><p>点击「加载存档」选择一个 SaveSlot 文件夹</p></div>'; return; }
 
   if (currentTab === 'world') renderArea(c);
+  else if (currentTab === 'forces') renderForce(c);
   else renderHero(c);
 }
 
@@ -58720,6 +58736,529 @@ function renderArea(c) {
   }
 
   c.innerHTML = html;
+}
+
+// ===== FORCE RENDER =====
+function renderForce(c) {
+  const forces = saveData.save?.Forces || [];
+  if (!forces.length) { c.innerHTML = '<div class="empty"><p>无门派数据</p></div>'; return; }
+  const f = forces[selectedIndex];
+  if (!f) return;
+  const fp = `saveData.save.Forces[${selectedIndex}]`;
+  const color = getForceColor(f.forceID);
+
+  const subTabs = [{id:'info',label:'门派信息'},{id:'diplomacy',label:'外交好感'}];
+  if (!window._forceSubTab) window._forceSubTab = 'info';
+  let html = `<div class="sub-tabs">${subTabs.map(t =>
+    `<div class="sub-tab${window._forceSubTab===t.id?' active':''}" onclick="window._forceSubTab='${t.id}';renderContent()">${t.label}</div>`
+  ).join('')}</div>`;
+
+  if (window._forceSubTab === 'info') {
+    html += `<div class="card"><div class="card-title" style="color:${color}">${f.forceName}</div>
+      <div class="field-grid">
+        ${field('门派名', 'text', f.forceName, `${fp}.forceName`)}
+        ${field('门派等级', 'number', f.forceLv, `${fp}.forceLv`)}
+        ${field('行事风格', 'text', f.forceStyle || '', `${fp}.forceStyle`)}
+        ${field('掌门ID', 'number', f.leader, `${fp}.leader`)}
+        ${field('总人口', 'number', f.totalPopulation, `${fp}.totalPopulation`)}
+        ${field('总薪俸', 'number', f.totalSalary, `${fp}.totalSalary`)}
+      </div>`;
+    const leaderName = resolveHeroName(f.leader);
+    if (leaderName) html += `<div style="font-size:12px;color:#888;margin-top:6px">掌门: ${heroLink(f.leader)}</div>`;
+    const allyArr = Array.isArray(f.allyForce) ? f.allyForce : (f.allyForce >= 0 ? [f.allyForce] : []);
+    const allyNames = allyArr.map(id => { const af = forces.find(x => x.forceID === id); return af ? af.forceName : id; });
+    html += `<div style="font-size:12px;color:#888">同盟: ${allyNames.length ? '<span style="color:#2ecc71">' + allyNames.join('、') + '</span>' : '无'}</div>`;
+    // Master/Servant info display
+    const masterID = f.masterForce ?? -1;
+    const servantArr = Array.isArray(f.servantForce) ? f.servantForce : [];
+    if (masterID >= 0) {
+      const mf = forces.find(x => x.forceID === masterID);
+      html += `<div style="font-size:12px;color:#888">宗主: <span style="color:#e67e22">${mf ? mf.forceName : masterID}</span></div>`;
+    }
+    if (servantArr.length) {
+      const sNames = servantArr.map(id => { const sf = forces.find(x => x.forceID === id); return sf ? sf.forceName : id; });
+      html += `<div style="font-size:12px;color:#888">附庸: <span style="color:#f39c12">${sNames.join('、')}</span></div>`;
+    }
+    html += `</div>`;
+
+    // Resources
+    const resNames = (typeof GameData !== 'undefined' && GameData.RESOURCE_NAMES) ? GameData.RESOURCE_NAMES : ['银两','粮食','木料','矿石','药材','威望'];
+    const resColors = ['#f1c40f','#2ecc71','#8B4513','#95a5a6','#9b59b6','#e94560'];
+    const store = f.resourceStore || [0,0,0,0,0,0];
+    const storeMax = f.resourceStoreMax || [0,0,0,0,0,0];
+    const change = f.resourceChange || [0,0,0,0,0,0];
+    html += `<div class="card"><div class="card-title">资源</div>
+      <table class="item-table"><thead><tr><th>资源</th><th>储量</th><th>上限</th><th>变化</th></tr></thead><tbody>`;
+    for (let ri = 0; ri < 6; ri++) {
+      html += `<tr>
+        <td style="color:${resColors[ri]}">${resNames[ri]}</td>
+        <td><input type="number" step="any" value="${r2(store[ri])}" style="width:80px" onchange="setVal('${fp}.resourceStore[${ri}]',parseFloat(this.value)||0)"></td>
+        <td><input type="number" step="any" value="${r2(storeMax[ri])}" style="width:80px" onchange="setVal('${fp}.resourceStoreMax[${ri}]',parseFloat(this.value)||0)"></td>
+        <td style="color:${change[ri]>=0?'#2ecc71':'#e74c3c'}">${change[ri]>=0?'+':''}${r2(change[ri])}</td>
+      </tr>`;
+    }
+    html += `</tbody></table></div>`;
+
+    // Owned areas
+    const ownAreas = f.ownAreasID || [];
+    const areas = saveData.save?.Areas || [];
+    html += `<div class="card"><div class="card-title">占领区域 (${ownAreas.length})</div>`;
+    if (ownAreas.length) {
+      html += `<div style="display:flex;flex-wrap:wrap;gap:6px">`;
+      ownAreas.forEach(id => {
+        const a = areas.find(x => x.areaID === id);
+        html += `<span style="background:#1a1a2e;padding:3px 8px;border-radius:4px;font-size:13px;border:1px solid #333">${a ? a.areaName : id}</span>`;
+      });
+      html += `</div>`;
+    } else html += `<p style="color:#666">无占领区域</p>`;
+    html += `</div>`;
+
+  } else if (window._forceSubTab === 'diplomacy') {
+    // Alliance - supports multiple allies (array)
+    const allyArr = Array.isArray(f.allyForce) ? f.allyForce : (f.allyForce >= 0 ? [f.allyForce] : []);
+    html += `<div class="card"><div class="card-title">同盟 (${allyArr.length})</div>`;
+    const allyNames = allyArr.map(id => { const af = forces.find(x => x.forceID === id); return af ? `<span style="color:${getForceColor(id)}">${af.forceName}</span>` : id; });
+    html += `<div style="font-size:13px;color:#888;margin-bottom:8px">当前同盟: ${allyNames.length ? allyNames.join('、') : '<span style="color:#666">无</span>'}
+      <span style="font-size:11px;color:#555">(支持多同盟)</span></div>`;
+    html += `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px">`;
+    forces.forEach((other, oi) => {
+      if (oi === selectedIndex) return;
+      const isAlly = allyArr.includes(other.forceID);
+      const oColor = getForceColor(other.forceID);
+      html += `<label style="display:flex;align-items:center;gap:4px;padding:3px 8px;background:${isAlly?'#1a3a2e':'#1a1a2e'};border:1px solid ${isAlly?'#2ecc71':'#333'};border-radius:4px;cursor:pointer;font-size:12px">
+        <input type="checkbox" ${isAlly?'checked':''} onchange="toggleForceAlly(${selectedIndex},${other.forceID},this.checked)">
+        <span style="color:${oColor}">${other.forceName}</span>
+      </label>`;
+    });
+    html += `</div>`;
+    html += `<div style="display:flex;gap:6px">
+      <button onclick="batchSetAlliance(${selectedIndex},true)" style="padding:3px 10px;background:#1a3a2e;border:1px solid #333;border-radius:3px;color:#2ecc71;font-size:12px;cursor:pointer">全部结盟</button>
+      <button onclick="batchSetAlliance(${selectedIndex},false)" style="padding:3px 10px;background:#3a1a1a;border:1px solid #333;border-radius:3px;color:#e94560;font-size:12px;cursor:pointer">全部解盟</button>
+    </div></div>`;
+
+    // Master/Servant (附庸关系)
+    const masterID = f.masterForce ?? -1;
+    const servantArr = Array.isArray(f.servantForce) ? f.servantForce : [];
+    html += `<div class="card"><div class="card-title">附庸关系</div>`;
+    // Master display
+    const masterForce = masterID >= 0 ? forces.find(x => x.forceID === masterID) : null;
+    html += `<div style="margin-bottom:10px"><span style="font-size:13px;color:#888">宗主门派: </span>`;
+    if (masterForce) {
+      html += `<span style="color:${getForceColor(masterID)};font-weight:bold">${masterForce.forceName}</span>
+        <button onclick="removeMasterForce(${selectedIndex})" style="margin-left:8px;padding:2px 8px;background:#3a1a1a;border:1px solid #333;border-radius:3px;color:#e94560;font-size:11px;cursor:pointer">解除宗主</button>`;
+    } else {
+      html += `<span style="color:#666">无</span>`;
+    }
+    html += `</div>`;
+    // Set master
+    if (masterID < 0) {
+      html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="color:#888;font-size:12px">设为附庸:</span>
+        <select id="setMasterForceSelect" style="padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px">`;
+      forces.forEach((other, oi) => {
+        if (oi === selectedIndex) return;
+        html += `<option value="${other.forceID}">${other.forceName}</option>`;
+      });
+      html += `</select>
+        <button onclick="setMasterForce(${selectedIndex})" style="padding:3px 10px;background:#0f3460;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px;cursor:pointer">设为宗主</button>
+      </div>`;
+    }
+    // Servant list
+    html += `<div style="margin-bottom:6px"><span style="font-size:13px;color:#888">附庸门派 (${servantArr.length}): </span>`;
+    if (servantArr.length) {
+      const sNames = servantArr.map(id => {
+        const sf = forces.find(x => x.forceID === id);
+        const sColor = getForceColor(id);
+        return `<span style="color:${sColor}">${sf ? sf.forceName : id}</span>
+          <button onclick="removeServantForce(${selectedIndex},${id})" style="padding:1px 6px;background:#3a1a1a;border:1px solid #333;border-radius:3px;color:#e94560;font-size:10px;cursor:pointer;margin-left:2px">✕</button>`;
+      });
+      html += sNames.join('&nbsp;&nbsp;');
+    } else {
+      html += `<span style="color:#666">无</span>`;
+    }
+    html += `</div>`;
+    // Add servant
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="color:#888;font-size:12px">添加附庸:</span>
+      <select id="addServantForceSelect" style="padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px">`;
+    forces.forEach((other, oi) => {
+      if (oi === selectedIndex) return;
+      const isSv = servantArr.includes(other.forceID);
+      const hasMaster = (other.masterForce ?? -1) >= 0;
+      const disabled = isSv || hasMaster;
+      html += `<option value="${other.forceID}" ${disabled?'disabled':''}>${other.forceName}${isSv?' (已附庸)':hasMaster?' (已有宗主)':''}</option>`;
+    });
+    html += `</select>
+      <button onclick="addServantForce(${selectedIndex})" style="padding:3px 10px;background:#0f3460;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px;cursor:pointer">+ 添加附庸</button>
+      <button onclick="clearServantForce(${selectedIndex})" style="padding:3px 10px;background:#3a1a1a;border:1px solid #333;border-radius:3px;color:#e94560;font-size:12px;cursor:pointer">全部解除</button>
+    </div></div>`;
+
+    // forceFavorSetting
+    const ffs = f.forceFavorSetting || [];
+    html += `<div class="card"><div class="card-title">外交好感设定 (${ffs.length})</div>`;
+    html += `<div style="font-size:11px;color:#555;margin-bottom:6px">forceFavorSetting: 门派AI外交好感目标设定</div>`;
+    if (ffs.length) {
+      html += `<table class="item-table"><thead><tr><th>门派</th><th>好感目标</th><th>操作</th></tr></thead><tbody>`;
+      ffs.forEach((entry, ei) => {
+        const other = forces.find(x => x.forceID === entry.forceID);
+        const oName = other ? other.forceName : entry.forceID;
+        const oColor = other ? getForceColor(other.forceID) : '#aaa';
+        html += `<tr>
+          <td style="color:${oColor}">${oName}</td>
+          <td><input type="number" min="0" max="100" step="any" value="${r2(entry.forceFavor)}" style="width:70px"
+            onchange="setForceFavorSetting(${selectedIndex},${ei},parseFloat(this.value)||0)"></td>
+          <td><button class="tag-remove" onclick="removeForceFavorSetting(${selectedIndex},${ei})">✕</button></td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    } else {
+      html += `<p style="color:#666;font-size:13px">无外交好感设定</p>`;
+    }
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+      <span style="color:#888;font-size:12px">添加设定:</span>
+      <select id="addFavorSettingForce" style="padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px">`;
+    forces.forEach((other, oi) => {
+      if (oi === selectedIndex) return;
+      const exists = ffs.some(e => e.forceID === other.forceID);
+      html += `<option value="${other.forceID}" ${exists?'disabled':''}>${other.forceName}${exists?' (已设定)':''}</option>`;
+    });
+    html += `</select>
+      <input id="addFavorSettingValue" type="number" value="50" min="0" max="100" style="width:60px;padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px" title="好感目标">
+      <button onclick="addForceFavorSetting(${selectedIndex})" style="padding:3px 10px;background:#0f3460;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px;cursor:pointer">+ 添加</button>
+      <button onclick="clearForceFavorSetting(${selectedIndex})" style="padding:3px 10px;background:#3a1a1a;border:1px solid #333;border-radius:3px;color:#e94560;font-size:12px;cursor:pointer">全部清除</button>
+    </div></div>`;
+
+    // Ceasefire
+    const stopWar = f.ForceStopWarTime || {};
+    const stopWarEntries = Object.entries(stopWar).filter(([k,v]) => v > 0);
+    html += `<div class="card"><div class="card-title">停战协议 (${stopWarEntries.length})</div>`;
+    if (stopWarEntries.length) {
+      html += `<table class="item-table"><thead><tr><th>门派</th><th>剩余天数</th><th>操作</th></tr></thead><tbody>`;
+      stopWarEntries.forEach(([fid, days]) => {
+        const other = forces.find(x => String(x.forceID) === fid);
+        const oName = other ? other.forceName : fid;
+        const oColor = other ? getForceColor(other.forceID) : '#aaa';
+        html += `<tr>
+          <td style="color:${oColor}">${oName}</td>
+          <td><input type="number" min="0" value="${r2(days)}" style="width:70px"
+            onchange="setForceStopWar(${selectedIndex},'${fid}',parseFloat(this.value)||0)"></td>
+          <td><button class="tag-remove" onclick="removeForceStopWar(${selectedIndex},'${fid}')">✕</button></td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    } else {
+      html += `<p style="color:#666;font-size:13px">无停战协议</p>`;
+    }
+    html += `<div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+      <span style="color:#888;font-size:12px">添加停战:</span>
+      <select id="addStopWarForce" style="padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px">`;
+    forces.forEach((other, oi) => {
+      if (oi === selectedIndex) return;
+      const hasStop = stopWar[String(other.forceID)] > 0;
+      html += `<option value="${other.forceID}" ${hasStop?'disabled':''}>${other.forceName}${hasStop?' (已停战)':''}</option>`;
+    });
+    html += `</select>
+      <input id="addStopWarDays" type="number" value="30" min="1" style="width:60px;padding:3px 6px;background:#1a1a2e;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px" title="天数">
+      <button onclick="addForceStopWar(${selectedIndex})" style="padding:3px 10px;background:#0f3460;border:1px solid #333;border-radius:3px;color:#e0e0e0;font-size:12px;cursor:pointer">+ 停战</button>
+      <button onclick="batchAddStopWar(${selectedIndex},999)" style="padding:3px 10px;background:#1a3a2e;border:1px solid #333;border-radius:3px;color:#2ecc71;font-size:12px;cursor:pointer">全部停战</button>
+      <button onclick="batchRemoveStopWar(${selectedIndex})" style="padding:3px 10px;background:#3a1a1a;border:1px solid #333;border-radius:3px;color:#e94560;font-size:12px;cursor:pointer">全部解除</button>
+    </div></div>`;
+
+    // Diplomacy / forceFavor
+    const favor = f.forceFavor || [];
+    html += `<div class="card"><div class="card-title" style="color:${color}">${f.forceName} — 外交好感</div>`;
+    html += `<div class="batch-bar" style="margin-bottom:8px">
+      <button onclick="batchSetForceFavor(${selectedIndex},100)">全部友好(100)</button>
+      <button onclick="batchSetForceFavor(${selectedIndex},50)">全部中立(50)</button>
+      <button onclick="batchSetForceFavor(${selectedIndex},0)">全部敌对(0)</button>
+    </div>`;
+    html += `<table class="item-table"><thead><tr><th>门派</th><th>好感度</th><th>关系</th><th>同盟</th><th>附庸</th><th>停战</th></tr></thead><tbody>`;
+    forces.forEach((other, oi) => {
+      if (oi === selectedIndex) return;
+      const val = favor[oi] ?? 50;
+      const oColor = getForceColor(other.forceID);
+      const relLabel = val >= 80 ? '友好' : val >= 60 ? '亲善' : val >= 40 ? '中立' : val >= 20 ? '冷淡' : '敌对';
+      const relColor = val >= 80 ? '#2ecc71' : val >= 60 ? '#8ac' : val >= 40 ? '#aaa' : val >= 20 ? '#d97706' : '#e74c3c';
+      const isAlly = (Array.isArray(f.allyForce) ? f.allyForce : (f.allyForce >= 0 ? [f.allyForce] : [])).includes(other.forceID);
+      const stopDays = stopWar[String(other.forceID)] || 0;
+      const isMaster = (f.masterForce ?? -1) === other.forceID;
+      const isServant = (Array.isArray(f.servantForce) ? f.servantForce : []).includes(other.forceID);
+      const vassalLabel = isMaster ? '<span style="color:#e67e22">👑 宗主</span>' : isServant ? '<span style="color:#f39c12">🏳 附庸</span>' : '';
+      html += `<tr>
+        <td style="color:${oColor}">${other.forceName}</td>
+        <td><input type="number" min="0" max="100" value="${r2(val)}" style="width:70px"
+          onchange="setForceFavor(${selectedIndex},${oi},parseFloat(this.value)||0)"></td>
+        <td style="color:${relColor};font-size:12px">${relLabel}</td>
+        <td>${isAlly ? '<span style="color:#2ecc71">★ 同盟</span>' : ''}</td>
+        <td>${vassalLabel}</td>
+        <td>${stopDays > 0 ? '<span style="color:#3498db">⏱ '+r2(stopDays)+'天</span>' : ''}</td>
+      </tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  c.innerHTML = html;
+}
+
+function setForceFavor(fromIdx, toIdx, value) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  if (forces[fromIdx]?.forceFavor) forces[fromIdx].forceFavor[toIdx] = value;
+  if (forces[toIdx]?.forceFavor) forces[toIdx].forceFavor[fromIdx] = value;
+  renderContent();
+}
+
+function setForceAlly(forceIdx, allyForceID) {
+  // Legacy single-ally function, kept for compatibility
+  toggleForceAlly(forceIdx, allyForceID, true);
+}
+
+function toggleForceAlly(forceIdx, allyForceID, add) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  if (!Array.isArray(f.allyForce)) f.allyForce = (f.allyForce >= 0 ? [f.allyForce] : []);
+  const newAlly = forces.find(x => x.forceID === allyForceID);
+  if (!newAlly) return;
+  if (!Array.isArray(newAlly.allyForce)) newAlly.allyForce = (newAlly.allyForce >= 0 ? [newAlly.allyForce] : []);
+
+  if (add) {
+    if (!f.allyForce.includes(allyForceID)) f.allyForce.push(allyForceID);
+    if (!newAlly.allyForce.includes(f.forceID)) newAlly.allyForce.push(f.forceID);
+    toast(`${f.forceName} ↔ ${newAlly.forceName} 已结为同盟`);
+  } else {
+    f.allyForce = f.allyForce.filter(id => id !== allyForceID);
+    newAlly.allyForce = newAlly.allyForce.filter(id => id !== f.forceID);
+    toast(`${f.forceName} ↔ ${newAlly.forceName} 已解除同盟`);
+  }
+  renderContent();
+}
+
+function batchSetAlliance(forceIdx, add) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  if (!Array.isArray(f.allyForce)) f.allyForce = [];
+  if (add) {
+    forces.forEach((other, oi) => {
+      if (oi === forceIdx) return;
+      if (!Array.isArray(other.allyForce)) other.allyForce = [];
+      if (!f.allyForce.includes(other.forceID)) f.allyForce.push(other.forceID);
+      if (!other.allyForce.includes(f.forceID)) other.allyForce.push(f.forceID);
+    });
+    toast(`${f.forceName}已与所有门派结盟`);
+  } else {
+    const oldAllies = [...f.allyForce];
+    f.allyForce = [];
+    oldAllies.forEach(id => {
+      const other = forces.find(x => x.forceID === id);
+      if (other && Array.isArray(other.allyForce)) {
+        other.allyForce = other.allyForce.filter(aid => aid !== f.forceID);
+      }
+    });
+    toast(`${f.forceName}已解除所有同盟`);
+  }
+  renderContent();
+}
+
+// ===== MASTER / SERVANT (附庸) =====
+function setMasterForce(forceIdx) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  const masterFid = parseInt(document.getElementById('setMasterForceSelect')?.value);
+  if (isNaN(masterFid)) return;
+  const master = forces.find(x => x.forceID === masterFid);
+  if (!master) return;
+  f.masterForce = masterFid;
+  if (!Array.isArray(master.servantForce)) master.servantForce = [];
+  if (!master.servantForce.includes(f.forceID)) master.servantForce.push(f.forceID);
+  toast(`${f.forceName} 已成为 ${master.forceName} 的附庸`);
+  renderContent();
+}
+
+function removeMasterForce(forceIdx) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  const masterFid = f.masterForce;
+  if (masterFid == null || masterFid < 0) return;
+  const master = forces.find(x => x.forceID === masterFid);
+  if (master && Array.isArray(master.servantForce)) {
+    master.servantForce = master.servantForce.filter(id => id !== f.forceID);
+  }
+  f.masterForce = -1;
+  toast(`${f.forceName} 已解除宗主关系`);
+  renderContent();
+}
+
+function addServantForce(forceIdx) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  const servantFid = parseInt(document.getElementById('addServantForceSelect')?.value);
+  if (isNaN(servantFid)) return;
+  const servant = forces.find(x => x.forceID === servantFid);
+  if (!servant) return;
+  if ((servant.masterForce ?? -1) >= 0 && servant.masterForce !== f.forceID) {
+    toast(`${servant.forceName} 已有宗主，请先解除`);
+    return;
+  }
+  if (!Array.isArray(f.servantForce)) f.servantForce = [];
+  if (!f.servantForce.includes(servantFid)) f.servantForce.push(servantFid);
+  servant.masterForce = f.forceID;
+  toast(`${servant.forceName} 已成为 ${f.forceName} 的附庸`);
+  renderContent();
+}
+
+function removeServantForce(forceIdx, servantFid) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  if (!Array.isArray(f.servantForce)) return;
+  f.servantForce = f.servantForce.filter(id => id !== servantFid);
+  const servant = forces.find(x => x.forceID === servantFid);
+  if (servant) servant.masterForce = -1;
+  toast(`已解除 ${servant?.forceName || servantFid} 的附庸关系`);
+  renderContent();
+}
+
+function clearServantForce(forceIdx) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  const oldServants = Array.isArray(f.servantForce) ? [...f.servantForce] : [];
+  f.servantForce = [];
+  oldServants.forEach(id => {
+    const servant = forces.find(x => x.forceID === id);
+    if (servant) servant.masterForce = -1;
+  });
+  toast(`已解除 ${f.forceName} 的所有附庸`);
+  renderContent();
+}
+
+function setForceFavorSetting(forceIdx, entryIdx, value) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  if (!f.forceFavorSetting) f.forceFavorSetting = [];
+  if (f.forceFavorSetting[entryIdx]) {
+    f.forceFavorSetting[entryIdx].forceFavor = value;
+  }
+  renderContent();
+}
+
+function removeForceFavorSetting(forceIdx, entryIdx) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  if (!f.forceFavorSetting) return;
+  f.forceFavorSetting.splice(entryIdx, 1);
+  toast('已移除外交好感设定');
+  renderContent();
+}
+
+function addForceFavorSetting(forceIdx) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  const fid = parseInt(document.getElementById('addFavorSettingForce')?.value);
+  const val = parseFloat(document.getElementById('addFavorSettingValue')?.value) || 50;
+  if (isNaN(fid)) return;
+  if (!f.forceFavorSetting) f.forceFavorSetting = [];
+  if (f.forceFavorSetting.some(e => e.forceID === fid)) { toast('该门派已有设定'); return; }
+  f.forceFavorSetting.push({ forceID: fid, forceFavor: val });
+  const other = forces.find(x => x.forceID === fid);
+  toast(`已添加对${other?.forceName || fid}的好感设定: ${val}`);
+  renderContent();
+}
+
+function clearForceFavorSetting(forceIdx) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  forces[forceIdx].forceFavorSetting = [];
+  toast('已清除所有外交好感设定');
+  renderContent();
+}
+
+function setForceStopWar(forceIdx, targetFid, days) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  const target = forces.find(x => String(x.forceID) === targetFid);
+  if (!f.ForceStopWarTime) f.ForceStopWarTime = {};
+  f.ForceStopWarTime[targetFid] = days;
+  // Symmetric
+  if (target) {
+    if (!target.ForceStopWarTime) target.ForceStopWarTime = {};
+    target.ForceStopWarTime[String(f.forceID)] = days;
+  }
+  renderContent();
+}
+
+function removeForceStopWar(forceIdx, targetFid) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  const target = forces.find(x => String(x.forceID) === targetFid);
+  if (f.ForceStopWarTime) delete f.ForceStopWarTime[targetFid];
+  if (target?.ForceStopWarTime) delete target.ForceStopWarTime[String(f.forceID)];
+  toast('已解除停战');
+  renderContent();
+}
+
+function addForceStopWar(forceIdx) {
+  const fid = document.getElementById('addStopWarForce')?.value;
+  const days = parseFloat(document.getElementById('addStopWarDays')?.value) || 30;
+  if (!fid) return;
+  setForceStopWar(forceIdx, fid, days);
+  const forces = saveData.save?.Forces;
+  const target = forces?.find(x => String(x.forceID) === fid);
+  toast(`已与${target?.forceName || fid}签订${days}天停战`);
+}
+
+function batchAddStopWar(forceIdx, days) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  if (!f.ForceStopWarTime) f.ForceStopWarTime = {};
+  forces.forEach((other, oi) => {
+    if (oi === forceIdx) return;
+    f.ForceStopWarTime[String(other.forceID)] = days;
+    if (!other.ForceStopWarTime) other.ForceStopWarTime = {};
+    other.ForceStopWarTime[String(f.forceID)] = days;
+  });
+  toast(`${f.forceName}已与所有门派停战${days}天`);
+  renderContent();
+}
+
+function batchRemoveStopWar(forceIdx) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  if (f.ForceStopWarTime) {
+    Object.keys(f.ForceStopWarTime).forEach(fid => {
+      const target = forces.find(x => String(x.forceID) === fid);
+      if (target?.ForceStopWarTime) delete target.ForceStopWarTime[String(f.forceID)];
+    });
+    f.ForceStopWarTime = {};
+  }
+  toast(`已解除${f.forceName}的所有停战`);
+  renderContent();
+}
+
+function batchSetForceFavor(forceIdx, value) {
+  const forces = saveData.save?.Forces;
+  if (!forces) return;
+  const f = forces[forceIdx];
+  if (!f?.forceFavor) return;
+  for (let i = 0; i < forces.length; i++) {
+    if (i === forceIdx) continue;
+    f.forceFavor[i] = value;
+    if (forces[i]?.forceFavor) forces[i].forceFavor[forceIdx] = value;
+  }
+  toast(`已将${f.forceName}与所有门派好感设为 ${value}`);
+  renderContent();
 }
 
 function renderAreaBuildings(a, ap) {
