@@ -236,8 +236,8 @@ body { font-family: 'Microsoft YaHei', 'SimHei', sans-serif; background: #1a1a2e
   <button class="btn-load" onclick="loadFolder()">📂 加载存档</button>
   <button class="btn-save" onclick="saveAll()">💾 保存存档</button>
   <span style="color:#333;margin:0 4px">|</span>
-  <button class="btn-load" onclick="document.getElementById('externalFileInput').click()">📦 加载外部仓库</button>
-  <button class="btn-save" onclick="saveExternalStorage()">💾 保存外部仓库</button>
+  <button class="btn-load" onclick="document.getElementById('externalFileInput').click()">📦 加载藏宝阁</button>
+  <button class="btn-save" onclick="saveExternalStorage()">💾 保存藏宝阁</button>
   <input type="file" id="folderInput" webkitdirectory multiple style="display:none" onchange="loadFromFileInput(this.files)">
   <input type="file" id="externalFileInput" accept=".dat" style="display:none" onchange="loadExternalFile(this.files[0])">
 </div>
@@ -247,7 +247,7 @@ body { font-family: 'Microsoft YaHei', 'SimHei', sans-serif; background: #1a1a2e
   <div class="tab" data-tab="tempheroes" onclick="switchMainTab('tempheroes')">👤 江湖人物</div>
   <div class="tab" data-tab="world" onclick="switchMainTab('world')">🗺 天下地图</div>
   <div class="tab" data-tab="forces" onclick="switchMainTab('forces')">⚔ 门派</div>
-  <div class="tab" data-tab="external" onclick="switchMainTab('external')">📦 外部仓库</div>
+  <div class="tab" data-tab="external" onclick="switchMainTab('external')">📦 藏宝阁</div>
 </div>
 
 <div class="main">
@@ -58792,9 +58792,9 @@ async function loadExternalFile(file) {
       t.classList.toggle('active', t.dataset.tab === 'external'));
     renderSidebar();
     renderContent();
-    toast('外部仓库加载成功');
+    toast('藏宝阁加载成功');
   } catch(e) {
-    toast('加载外部仓库失败: ' + e.message, true);
+    toast('加载藏宝阁失败: ' + e.message, true);
   }
   // Reset file input so the same file can be loaded again
   document.getElementById('externalFileInput').value = '';
@@ -58802,7 +58802,7 @@ async function loadExternalFile(file) {
 
 function saveExternalStorage() {
   if (!saveData.externalStorage) {
-    toast('外部仓库无数据，请先加载或添加物品', true);
+    toast('藏宝阁无数据，请先加载或添加物品', true);
     return;
   }
   const content = JSON.stringify(saveData.externalStorage, null, 2);
@@ -58917,7 +58917,7 @@ function renderSidebar() {
     const itemCount = ext?.allItem?.length || 0;
     const money = ext?.money || 0;
     const weight = ext?.weight || 0;
-    let html = `<div class="sidebar-header">外部仓库</div>`;
+    let html = `<div class="sidebar-header">藏宝阁</div>`;
     html += `<div class="sidebar-item active" style="flex-direction:column;align-items:flex-start;gap:4px">
       <div style="display:flex;justify-content:space-between;width:100%">
         <span style="color:#e0e0e0">📦 物品数量</span>
@@ -58933,7 +58933,7 @@ function renderSidebar() {
       </div>
     </div>`;
     html += `<div style="padding:12px;font-size:12px;color:#666;line-height:1.6">
-      外部仓库用于跨存档共享物品。<br><br>
+      藏宝阁用于跨存档共享物品。<br><br>
       将物品存放于此，可以在另一个存档中取出使用，实现存档间的物品传递。
     </div>`;
     sb.innerHTML = html;
@@ -59053,7 +59053,7 @@ function renderExternalStorage(c) {
   if (!ext) {
     c.innerHTML = `<div class="empty">
       <div class="icon">📦</div>
-      <p>外部仓库无数据</p>
+      <p>藏宝阁无数据</p>
       <p style="font-size:12px;color:#666;margin-top:8px">ExternalStorateData.dat 文件未加载或为空</p>
     </div>`;
     return;
@@ -59063,10 +59063,10 @@ function renderExternalStorage(c) {
   const basePath = 'saveData.externalStorage';
   const money = ext.money || 0;
 
-  let html = `<div class="card"><div class="card-title">外部仓库 — 银两: <input type="number" value="${money}" style="width:100px;padding:3px 6px;background:#1a1a2e;border:1px solid #333;color:#e94560;border-radius:3px" onchange="setVal('${basePath}.money',parseInt(this.value))"> — 物品 ${items.length} 件 — 总重量: ${r2(ext.weight || 0)}</div>`;
+  let html = `<div class="card"><div class="card-title">藏宝阁 — 银两: <input type="number" value="${money}" style="width:100px;padding:3px 6px;background:#1a1a2e;border:1px solid #333;color:#e94560;border-radius:3px" onchange="setVal('${basePath}.money',parseInt(this.value))"> — 物品 ${items.length} 件 — 总重量: ${r2(ext.weight || 0)}</div>`;
 
   html += `<div style="font-size:12px;color:#888;margin-bottom:8px;padding:6px;background:#111;border-radius:4px">
-    外部仓库用于跨存档共享物品。将物品放入此处后，可在另一个存档中取出使用。
+    藏宝阁用于跨存档共享物品。将物品放入此处后，可在另一个存档中取出使用。
   </div>`;
 
   // Add item controls
@@ -59131,7 +59131,7 @@ function renderExternalStorage(c) {
   </div>`;
 
   if (!items.length) {
-    html += '<p style="color:#666">外部仓库无物品</p></div>';
+    html += '<p style="color:#666">藏宝阁无物品</p></div>';
     c.innerHTML = html;
     return;
   }
@@ -59572,7 +59572,7 @@ function addItemToExternal() {
   saveData.externalStorage.allItem.push(newItem);
   saveData.externalStorage.weight = (saveData.externalStorage.weight || 0) + (newItem.weight || 0);
   externalOpenItemIdx = saveData.externalStorage.allItem.length - 1;
-  toast(`已添加到外部仓库: ${newItem.name}`);
+  toast(`已添加到藏宝阁: ${newItem.name}`);
   renderContent();
 }
 
