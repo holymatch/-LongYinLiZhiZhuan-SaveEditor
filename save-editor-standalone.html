@@ -58909,6 +58909,7 @@ function switchMainTab(tab) {
 // ===== SIDEBAR =====
 function renderSidebar() {
   const sb = document.getElementById('sidebar');
+  let html = '';
 
   // External storage tab can work independently
   if (currentTab === 'external') {
@@ -58941,6 +58942,12 @@ function renderSidebar() {
 
   // Other tabs require a save to be loaded
   if (!dirHandle) { sb.innerHTML = ''; return; }
+
+  // Define items based on current tab
+  const items = currentTab === 'forces' ? (saveData.save?.forceData || []) :
+                currentTab === 'world' ? (saveData.save?.areaData || []) :
+                currentTab === 'heroes' ? (saveData.heroes || []) :
+                currentTab === 'tempheroes' ? (saveData.tempHeroes || []) : [];
 
   if (currentTab === 'forces') {
     html += `<div class="sidebar-header">门派 (${items.length})</div>`;
@@ -59679,6 +59686,7 @@ function renderHeroBasic(h, src) {
       ${field('俸禄', 'number', h.salary, `${p}.salary`)}
       ${field('银两', 'number', h.itemListData?.money||0, `${p}.itemListData.money`)}
       ${h.isGovern ? fieldSelect('官职', h.governLv, `${p}.governLv`, Object.entries(GOVERN_LV_NAMES).map(([k,v])=>({v:parseInt(k),l:v}))) : ''}
+      ${h.isGovern ? field('官府功绩', 'number', r2(h.governContribution||0), `${p}.governContribution`) : ''}
     </div>
   </div>`;
   if (h.heroID === 0) html += renderPlayerForceContribution();
